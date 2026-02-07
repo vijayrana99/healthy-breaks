@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Healthy Breaks</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- DaisyUI -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <style>
+    body {
+      width: 380px;
+      min-height: 500px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .break-row {
+      transition: all 0.3s ease;
+    }
+    .break-row:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+    .config-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .config-panel.open {
+      max-height: 300px;
+    }
+  </style>
+</head>
+<body class="bg-base-100">
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-base-100 border-b border-base-300 p-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-2xl">
+        🍃
+      </div>
+      <div>
+        <h1 class="text-xl font-bold">Healthy Breaks</h1>
+        <p class="text-xs text-base-content/60">Stay healthy while you work</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="p-4">
+    <!-- Break Types List -->
+    <div id="breaks-list" class="space-y-2">
+      <!-- Breaks will be dynamically inserted here -->
+    </div>
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="border-t border-base-300 p-4 bg-base-200">
+    <!-- Master Interval Override -->
+    <div class="mb-4">
+      <label class="label">
+        <span class="label-text text-xs font-semibold">Master Override (minutes)</span>
+      </label>
+      <div class="flex gap-2">
+        <input 
+          type="number" 
+          id="master-interval" 
+          class="input input-sm input-bordered flex-1" 
+          placeholder="Set all intervals..."
+          min="1"
+          max="180"
+        >
+        <button id="apply-master" class="btn btn-sm btn-primary">Apply</button>
+      </div>
+    </div>
+
+    <!-- Global Controls -->
+    <div class="grid grid-cols-3 gap-2">
+      <button id="reset-all" class="btn btn-sm btn-outline">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Reset All
+      </button>
+      <button id="snooze-all" class="btn btn-sm btn-outline">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Snooze All
+      </button>
+      <button id="pause-all" class="btn btn-sm btn-outline">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Pause All
+      </button>
+    </div>
+
+    <!-- Privacy Notice -->
+    <div class="mt-4 text-center">
+      <p class="text-xs text-base-content/50 flex items-center justify-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        No data leaves your device
+      </p>
+    </div>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
