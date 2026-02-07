@@ -13,28 +13,38 @@
       max-height: 600px;
       overflow-y: auto;
     }
-    .break-row {
+    .break-card {
       transition: all 0.3s ease;
-      margin-bottom: 0.5rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
     }
-    .break-row:hover {
-      background-color: rgba(0, 0, 0, 0.02);
+    .break-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
     }
     .config-panel {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
     }
     .config-panel.open {
-      max-height: 300px;
+      max-height: 250px;
+      opacity: 1;
+    }
+    .control-btn-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .control-btn-group .btn {
+      flex: 1;
     }
   </style>
 </head>
 <body class="bg-base-100 w-96 h-auto">
   <!-- Header -->
-  <header class="sticky top-0 z-50 bg-base-100 border-b border-base-300 p-4">
+  <header class="sticky top-0 z-50 bg-base-100 border-b border-base-300 p-4 shadow-sm">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-2xl">
+      <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-2xl shadow-md">
         🍃
       </div>
       <div>
@@ -47,33 +57,39 @@
   <!-- Main Content -->
   <main class="p-4">
     <!-- Break Types List -->
-    <div id="breaks-list" class="space-y-2 py-2">
+    <div id="breaks-list" class="space-y-3">
       <!-- Breaks will be dynamically inserted here -->
     </div>
   </main>
 
   <!-- Global Footer -->
   <footer class="border-t border-base-300 p-4 bg-base-200">
-    <!-- Master Interval Override -->
-    <div class="mb-4">
-      <label class="label py-1">
-        <span class="label-text text-xs font-semibold">Master Override (minutes)</span>
-      </label>
-      <div class="flex gap-2">
-        <input 
-          type="number" 
-          id="master-interval" 
-          class="input input-sm input-bordered flex-1" 
-          placeholder="Set all intervals..."
-          min="1"
-          max="180"
-        >
-        <button id="apply-master" class="btn btn-sm btn-primary">Apply</button>
+    <!-- Master Interval Override Card -->
+    <div class="card bg-base-100 shadow-md border border-base-300 mb-4">
+      <div class="card-body p-4">
+        <h3 class="card-title text-sm font-bold mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          Master Override
+        </h3>
+        <label class="label py-1">
+          <span class="label-text text-xs">Set all intervals (minutes)</span>
+        </label>
+        <div class="flex gap-2">
+          <input 
+            type="number" 
+            id="master-interval" 
+            class="input input-sm input-bordered flex-1" 
+            placeholder="Enter minutes..."
+            min="1"
+            max="180"
+          >
+          <button id="apply-master" class="btn btn-sm btn-primary">Apply</button>
+        </div>
       </div>
     </div>
 
     <!-- Global Controls -->
-    <div class="grid grid-cols-3 gap-2">
+    <div class="grid grid-cols-3 gap-2 mb-4">
       <button id="reset-all" class="btn btn-xs btn-outline">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         Reset All
@@ -89,7 +105,7 @@
     </div>
 
     <!-- Privacy Notice -->
-    <div class="mt-4 text-center">
+    <div class="text-center">
       <p class="text-xs text-base-content/50 flex items-center justify-center gap-1">
         <svg class="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
         No data leaves your device

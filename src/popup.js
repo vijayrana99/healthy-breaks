@@ -54,63 +54,77 @@ async function renderBreaksList() {
 
 function createBreakRow(breakType, config, data) {
   const div = document.createElement('div');
-  div.className = 'break-row bg-base-200 rounded-lg overflow-hidden mb-2';
+  div.className = 'break-card card bg-base-100 shadow-md rounded-xl overflow-hidden';
   div.dataset.break = breakType;
+  
+  const statusColors = {
+    active: 'badge-success',
+    paused: 'badge-ghost',
+    snoozed: 'badge-warning'
+  };
+  
+  const statusColor = statusColors[data.status] || 'badge-ghost';
+  
   div.innerHTML = `
-    <div class="break-header p-3 flex items-center justify-between cursor-pointer" data-action="toggle-config" data-break="${breakType}">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl">${config.icon}</span>
-        <div>
-          <h3 class="font-semibold text-sm">${config.name}</h3>
-          <p class="text-xs text-base-content/60 countdown" data-break="${breakType}">--:--</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="badge badge-sm ${getStatusBadgeClass(data.status)}">${data.status}</span>
-        <input 
-          type="checkbox" 
-          class="toggle toggle-sm toggle-${config.color} break-toggle" 
-          ${data.enabled ? 'checked' : ''}
-          data-break="${breakType}"
-        >
-      </div>
-    </div>
-    
-    <!-- Config Panel -->
-    <div id="config-${breakType}" class="config-panel bg-base-300">
-      <div class="p-3 space-y-3">
-        <!-- Interval Input -->
-        <div>
-          <label class="label py-1">
-            <span class="label-text text-xs">Interval (minutes)</span>
-          </label>
-          <div class="flex gap-2">
-            <input 
-              type="number" 
-              class="input input-sm input-bordered flex-1 interval-input" 
-              value="${data.interval}"
-              min="1"
-              max="180"
-              data-break="${breakType}"
-            >
-            <button class="btn btn-sm btn-ghost update-interval-btn" data-break="${breakType}">Update</button>
+    <div class="card-body p-4">
+      <!-- Header Section -->
+      <div class="break-header flex items-center justify-between cursor-pointer mb-2" data-action="toggle-config" data-break="${breakType}">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-${config.color}/10 flex items-center justify-center text-2xl">
+            ${config.icon}
+          </div>
+          <div>
+            <h3 class="font-bold text-base">${config.name}</h3>
+            <p class="text-xs text-base-content/60 countdown font-mono" data-break="${breakType}">--:--</p>
           </div>
         </div>
-        
-        <!-- Controls -->
-        <div class="flex gap-2">
-          <button class="btn btn-sm btn-outline flex-1 reset-timer-btn" data-break="${breakType}">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            Reset
-          </button>
-          <button class="btn btn-sm btn-outline flex-1 snooze-btn" data-break="${breakType}" data-minutes="5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Snooze 5m
-          </button>
-          <button class="btn btn-sm btn-outline flex-1 pause-btn" data-break="${breakType}">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Pause
-          </button>
+        <div class="flex items-center gap-3">
+          <span class="badge ${statusColor} badge-md font-medium capitalize">${data.status}</span>
+          <input 
+            type="checkbox" 
+            class="toggle toggle-md toggle-${config.color} break-toggle" 
+            ${data.enabled ? 'checked' : ''}
+            data-break="${breakType}"
+          >
+        </div>
+      </div>
+      
+      <!-- Config Panel -->
+      <div id="config-${breakType}" class="config-panel border-t border-base-200 pt-3 mt-2">
+        <div class="space-y-4">
+          <!-- Interval Input Row -->
+          <div class="flex items-end gap-2">
+            <div class="flex-1">
+              <label class="label py-1">
+                <span class="label-text text-xs font-medium">Interval (minutes)</span>
+              </label>
+              <input 
+                type="number" 
+                class="input input-sm input-bordered w-full interval-input" 
+                value="${data.interval}"
+                min="1"
+                max="180"
+                data-break="${breakType}"
+              >
+            </div>
+            <button class="btn btn-sm btn-primary update-interval-btn mb-0.5" data-break="${breakType}">Update</button>
+          </div>
+          
+          <!-- Control Buttons Group -->
+          <div class="control-btn-group">
+            <button class="btn btn-sm btn-outline reset-timer-btn gap-1" data-break="${breakType}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              Reset
+            </button>
+            <button class="btn btn-sm btn-outline snooze-btn gap-1" data-break="${breakType}" data-minutes="5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Snooze
+            </button>
+            <button class="btn btn-sm btn-outline pause-btn gap-1" data-break="${breakType}">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Pause
+            </button>
+          </div>
         </div>
       </div>
     </div>
