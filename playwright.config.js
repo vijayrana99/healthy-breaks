@@ -16,13 +16,6 @@ module.exports = defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        // Load extension in Chrome
-        launchOptions: {
-          args: [
-            `--disable-extensions-except=${path.resolve(__dirname)}`,
-            `--load-extension=${path.resolve(__dirname)}`,
-          ],
-        },
       },
     },
   ],
