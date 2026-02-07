@@ -54,35 +54,31 @@ async function renderBreaksList() {
 
 function createBreakRow(breakType, config, data) {
   const div = document.createElement('div');
-  div.className = 'break-card card bg-base-100 shadow-md rounded-xl overflow-hidden';
+  div.className = 'break-card card bg-base-100 shadow-md border border-base-200 mb-3 overflow-visible';
   div.dataset.break = breakType;
   
-  const statusColors = {
-    active: 'badge-success',
-    paused: 'badge-ghost',
-    snoozed: 'badge-warning'
-  };
-  
-  const statusColor = statusColors[data.status] || 'badge-ghost';
+  // Badge shows "Active" or "Disabled" based on enabled state
+  const badgeText = data.enabled ? 'Active' : 'Disabled';
+  const badgeClass = data.enabled ? 'badge-success' : 'badge-ghost';
   
   div.innerHTML = `
-    <div class="card-body p-4">
-      <!-- Header Section -->
-      <div class="break-header flex items-center justify-between cursor-pointer mb-2" data-action="toggle-config" data-break="${breakType}">
+    <div class="card-body p-4 pb-2">
+      <!-- Header Section with Icon, Title, Badge, and Toggle -->
+      <div class="break-header flex items-center justify-between cursor-pointer" data-action="toggle-config" data-break="${breakType}">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-${config.color}/10 flex items-center justify-center text-2xl">
             ${config.icon}
           </div>
           <div>
-            <h3 class="font-bold text-base">${config.name}</h3>
-            <p class="text-xs text-base-content/60 countdown font-mono" data-break="${breakType}">--:--</p>
+            <h3 class="font-semibold text-base">${config.name}</h3>
+            <p class="text-xs text-base-content/60 countdown" data-break="${breakType}">--:--</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <span class="badge ${statusColor} badge-md font-medium capitalize">${data.status}</span>
+          <span class="badge ${badgeClass} badge-sm font-medium">${badgeText}</span>
           <input 
             type="checkbox" 
-            class="toggle toggle-md toggle-${config.color} break-toggle" 
+            class="toggle toggle-success toggle-sm break-toggle" 
             ${data.enabled ? 'checked' : ''}
             data-break="${breakType}"
           >
@@ -90,38 +86,35 @@ function createBreakRow(breakType, config, data) {
       </div>
       
       <!-- Config Panel -->
-      <div id="config-${breakType}" class="config-panel border-t border-base-200 pt-3 mt-2">
-        <div class="space-y-4">
+      <div id="config-${breakType}" class="config-panel bg-base-200/50 p-3 rounded-b-xl -mx-4 mt-3">
+        <div class="space-y-3">
           <!-- Interval Input Row -->
-          <div class="flex items-end gap-2">
+          <div class="flex gap-2 items-end">
             <div class="flex-1">
-              <label class="label py-1">
-                <span class="label-text text-xs font-medium">Interval (minutes)</span>
+              <label class="label py-0 mb-1">
+                <span class="label-text text-xs">Interval (minutes)</span>
               </label>
               <input 
                 type="number" 
-                class="input input-sm input-bordered w-full interval-input" 
+                class="input input-sm input-bordered bg-white w-full interval-input" 
                 value="${data.interval}"
                 min="1"
                 max="180"
                 data-break="${breakType}"
               >
             </div>
-            <button class="btn btn-sm btn-primary update-interval-btn mb-0.5" data-break="${breakType}">Update</button>
+            <button class="btn btn-sm btn-primary update-interval-btn" data-break="${breakType}">Update</button>
           </div>
           
-          <!-- Control Buttons Group -->
-          <div class="control-btn-group">
-            <button class="btn btn-sm btn-outline reset-timer-btn gap-1" data-break="${breakType}">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <!-- Action Grid -->
+          <div class="grid grid-cols-3 gap-2 mt-2">
+            <button class="btn btn-xs btn-outline bg-white reset-timer-btn" data-break="${breakType}">
               Reset
             </button>
-            <button class="btn btn-sm btn-outline snooze-btn gap-1" data-break="${breakType}" data-minutes="5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              Snooze
+            <button class="btn btn-xs btn-outline bg-white snooze-btn" data-break="${breakType}" data-minutes="5">
+              Snooze 5m
             </button>
-            <button class="btn btn-sm btn-outline pause-btn gap-1" data-break="${breakType}">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <button class="btn btn-xs btn-outline bg-white pause-btn" data-break="${breakType}">
               Pause
             </button>
           </div>
