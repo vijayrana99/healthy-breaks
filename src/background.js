@@ -69,18 +69,30 @@ async function handleBreakTrigger(breakType) {
   breakData.waitingSince = Date.now();
   await chrome.storage.local.set({ breaks: data.breaks });
   
-  // Show notification
-  chrome.notifications.create(`notification-${breakType}`, {
-    type: 'basic',
-    iconUrl: 'src/icons/icon128.png',
-    title: `${BREAK_TYPES[breakType].name}`,
-    message: BREAK_TYPES[breakType].description,
-    requireInteraction: true,
-    buttons: [
-      { title: 'Done' },
-      { title: 'Snooze 5m' }
-    ]
-  });
+  // Show notification with error handling
+  try {
+    const notificationId = `notification-${breakType}-${Date.now()}`;
+    chrome.notifications.create(notificationId, {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('src/icons/icon128.png'),
+      title: `${BREAK_TYPES[breakType].name}`,
+      message: BREAK_TYPES[breakType].description,
+      requireInteraction: true,
+      priority: 2,
+      buttons: [
+        { title: 'Done' },
+        { title: 'Snooze 5m' }
+      ]
+    }, (createdId) => {
+      if (chrome.runtime.lastError) {
+        console.error('Notification error:', chrome.runtime.lastError);
+      } else {
+        console.log(`Notification created for ${breakType}: ${createdId}`);
+      }
+    });
+  } catch (error) {
+    console.error('Failed to create notification:', error);
+  }
 }
 
 async function handleSnoozeEnd(breakType) {
@@ -97,7 +109,11 @@ async function handleSnoozeEnd(breakType) {
 
 // Handle notification button clicks
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
-  const breakType = notificationId.replace('notification-', '');
+  // Extract break type from notification ID (format: notification-{breakType}-{timestamp})
+  const match = notificationId.match(/notification-(\w+)-\d+/);
+  if (!match) return;
+  
+  const breakType = match[1];
   
   if (buttonIndex === 0) {
     // Done - dismiss notification and reset timer
@@ -112,14 +128,16 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 
 // Handle notification close (user dismissed it without clicking buttons)
 chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
-  if (notificationId.startsWith('notification-')) {
-    const breakType = notificationId.replace('notification-', '');
-    const data = await chrome.storage.local.get('breaks');
-    
-    // If closed by user and still in waiting state, reset the timer
-    if (byUser && data.breaks[breakType].status === 'waiting') {
-      await resetTimer(breakType);
-    }
+  // Extract break type from notification ID (format: notification-{breakType}-{timestamp})
+  const match = notificationId.match(/notification-(\w+)-\d+/);
+  if (!match) return;
+  
+  const breakType = match[1];
+  const data = await chrome.storage.local.get('breaks');
+  
+  // If closed by user and still in waiting state, reset the timer
+  if (byUser && data.breaks[breakType].status === 'waiting') {
+    await resetTimer(breakType);
   }
 });
 
