@@ -57,9 +57,8 @@ test.describe('Healthy Breaks Extension - Validation', () => {
     expect(popupContent).toContain('id="snooze-all"');
     expect(popupContent).toContain('id="pause-all"');
     
-    // Check for styling libraries
-    expect(popupContent).toContain('tailwindcss');
-    expect(popupContent).toContain('daisyui');
+    // Check for styling libraries (local files for CSP compliance)
+    expect(popupContent).toContain('tailwind.min.css');
     
     // Check for privacy notice
     expect(popupContent).toContain('No data leaves your device');
