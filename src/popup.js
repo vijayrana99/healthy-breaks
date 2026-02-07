@@ -73,12 +73,16 @@ function createBreakRow(breakType, config, data) {
             <p class="text-xs text-base-content/60 countdown font-medium" data-break="${breakType}">--:--</p>
           </div>
         </div>
-        <input 
-          type="checkbox" 
-          class="toggle toggle-success toggle-sm break-toggle" 
-          ${toggleChecked}
-          data-break="${breakType}"
-        >
+        <label class="switch" for="checkbox-${breakType}">
+          <input 
+            type="checkbox" 
+            id="checkbox-${breakType}"
+            class="break-toggle" 
+            ${toggleChecked}
+            data-break="${breakType}"
+          >
+          <div class="slider round"></div>
+        </label>
       </div>
       
       <!-- Config Panel -->
