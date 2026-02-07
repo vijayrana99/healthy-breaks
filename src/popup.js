@@ -54,40 +54,36 @@ async function renderBreaksList() {
 
 function createBreakRow(breakType, config, data) {
   const div = document.createElement('div');
-  div.className = 'break-card card bg-base-100 shadow-md border border-base-200 mb-3 overflow-visible';
+  div.className = 'break-card card bg-base-100 shadow-md border border-base-200 overflow-hidden';
   div.dataset.break = breakType;
   
-  // Badge shows "Active" or "Disabled" based on enabled state
-  const badgeText = data.enabled ? 'Active' : 'Disabled';
-  const badgeClass = data.enabled ? 'badge-success' : 'badge-ghost';
+  // Toggle styling based on enabled state
+  const toggleChecked = data.enabled ? 'checked' : '';
   
   div.innerHTML = `
-    <div class="card-body p-4 pb-2">
-      <!-- Header Section with Icon, Title, Badge, and Toggle -->
+    <div class="card-body p-3">
+      <!-- Header Section with Icon, Title, and Toggle -->
       <div class="break-header flex items-center justify-between cursor-pointer" data-action="toggle-config" data-break="${breakType}">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-${config.color}/10 flex items-center justify-center text-2xl">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-${config.color}/10 flex items-center justify-center text-xl">
             ${config.icon}
           </div>
           <div>
-            <h3 class="font-semibold text-base">${config.name}</h3>
-            <p class="text-xs text-base-content/60 countdown" data-break="${breakType}">--:--</p>
+            <h3 class="font-semibold text-sm">${config.name}</h3>
+            <p class="text-xs text-base-content/60 countdown font-medium" data-break="${breakType}">--:--</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="badge ${badgeClass} badge-sm font-medium">${badgeText}</span>
-          <input 
-            type="checkbox" 
-            class="toggle toggle-success toggle-sm break-toggle" 
-            ${data.enabled ? 'checked' : ''}
-            data-break="${breakType}"
-          >
-        </div>
+        <input 
+          type="checkbox" 
+          class="toggle toggle-success toggle-sm break-toggle" 
+          ${toggleChecked}
+          data-break="${breakType}"
+        >
       </div>
       
       <!-- Config Panel -->
-      <div id="config-${breakType}" class="config-panel bg-base-200/50 p-3 rounded-b-xl -mx-4 mt-3">
-        <div class="space-y-3">
+      <div id="config-${breakType}" class="config-panel bg-base-200/50 p-3 rounded-b-xl -mx-3 mt-2">
+        <div class="space-y-2">
           <!-- Interval Input Row -->
           <div class="flex gap-2 items-end">
             <div class="flex-1">
@@ -112,7 +108,7 @@ function createBreakRow(breakType, config, data) {
               Reset
             </button>
             <button class="btn btn-xs btn-outline bg-white snooze-btn" data-break="${breakType}" data-minutes="5">
-              Snooze 5m
+              Snooze
             </button>
             <button class="btn btn-xs btn-outline bg-white pause-btn" data-break="${breakType}">
               Pause
@@ -286,7 +282,7 @@ async function updateCountdowns() {
     const data = breaksData[breakType];
     
     if (!data.enabled) {
-      el.textContent = 'Disabled';
+      el.textContent = 'Off';
       return;
     }
     
@@ -298,10 +294,16 @@ async function updateCountdowns() {
     if (data.status === 'snoozed' && data.snoozeUntil) {
       const remaining = data.snoozeUntil - Date.now();
       if (remaining > 0) {
-        el.textContent = `Snoozed: ${formatTime(remaining)}`;
+        el.textContent = `Snoozed`;
       } else {
         el.textContent = 'Resuming...';
       }
+      return;
+    }
+    
+    if (data.status === 'waiting') {
+      el.textContent = 'Due!';
+      el.classList.add('text-error');
       return;
     }
     
@@ -311,11 +313,13 @@ async function updateCountdowns() {
         const remaining = alarm.scheduledTime - Date.now();
         if (remaining > 0) {
           el.textContent = formatTime(remaining);
+          el.classList.remove('text-error');
         } else {
           el.textContent = 'Due!';
+          el.classList.add('text-error');
         }
       } else {
-        el.textContent = 'Starting...';
+        el.textContent = 'Ready';
       }
     });
   });

@@ -36,7 +36,8 @@ chrome.runtime.onInstalled.addListener(async () => {
         interval: BREAK_TYPES[key].defaultInterval,
         status: 'paused',
         snoozeUntil: null,
-        lastTriggered: null
+        lastTriggered: null,
+        waitingSince: null
       };
     });
     await chrome.storage.local.set({ 
@@ -63,6 +64,11 @@ async function handleBreakTrigger(breakType) {
   
   if (!breakData || !breakData.enabled) return;
   
+  // Set waiting state - timer will NOT auto-restart
+  breakData.status = 'waiting';
+  breakData.waitingSince = Date.now();
+  await chrome.storage.local.set({ breaks: data.breaks });
+  
   // Show notification
   chrome.notifications.create(`notification-${breakType}`, {
     type: 'basic',
@@ -74,15 +80,6 @@ async function handleBreakTrigger(breakType) {
       { title: 'Done' },
       { title: 'Snooze 5m' }
     ]
-  });
-  
-  // Update last triggered
-  breakData.lastTriggered = Date.now();
-  await chrome.storage.local.set({ breaks: data.breaks });
-  
-  // Restart the alarm for next interval
-  chrome.alarms.create(`break-${breakType}`, {
-    delayInMinutes: breakData.interval
   });
 }
 
@@ -98,6 +95,7 @@ async function handleSnoozeEnd(breakType) {
   });
 }
 
+// Handle notification button clicks
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
   const breakType = notificationId.replace('notification-', '');
   
@@ -112,10 +110,24 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   }
 });
 
+// Handle notification close (user dismissed it without clicking buttons)
+chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
+  if (notificationId.startsWith('notification-')) {
+    const breakType = notificationId.replace('notification-', '');
+    const data = await chrome.storage.local.get('breaks');
+    
+    // If closed by user and still in waiting state, reset the timer
+    if (byUser && data.breaks[breakType].status === 'waiting') {
+      await resetTimer(breakType);
+    }
+  }
+});
+
 async function snoozeBreak(breakType, minutes) {
   const data = await chrome.storage.local.get('breaks');
   data.breaks[breakType].snoozeUntil = Date.now() + (minutes * 60 * 1000);
   data.breaks[breakType].status = 'snoozed';
+  data.breaks[breakType].waitingSince = null;
   await chrome.storage.local.set({ breaks: data.breaks });
   
   // Clear existing alarm and create snooze alarm
@@ -137,7 +149,11 @@ async function restoreAlarms() {
   for (const [breakType, breakData] of Object.entries(data.breaks)) {
     if (!breakData.enabled) continue;
     
-    if (breakData.snoozeUntil && breakData.snoozeUntil > Date.now()) {
+    if (breakData.status === 'waiting') {
+      // Still waiting for user action - notification should still be there
+      // Re-show notification in case it was lost
+      await handleBreakTrigger(breakType);
+    } else if (breakData.snoozeUntil && breakData.snoozeUntil > Date.now()) {
       // Still in snooze period
       const remainingMinutes = Math.ceil((breakData.snoozeUntil - Date.now()) / (60 * 1000));
       chrome.alarms.create(`snooze-${breakType}`, {
@@ -150,7 +166,7 @@ async function restoreAlarms() {
       const intervalMs = breakData.interval * 60 * 1000;
       
       if (elapsed >= intervalMs) {
-        // Missed trigger - trigger now
+        // Missed trigger - go to waiting state
         await handleBreakTrigger(breakType);
       } else {
         // Set alarm for remaining time
@@ -222,6 +238,7 @@ async function toggleBreak(breakType, enabled) {
   const data = await chrome.storage.local.get('breaks');
   data.breaks[breakType].enabled = enabled;
   data.breaks[breakType].status = enabled ? 'active' : 'paused';
+  data.breaks[breakType].waitingSince = null;
   await chrome.storage.local.set({ breaks: data.breaks });
   
   if (enabled) {
@@ -254,6 +271,7 @@ async function resetTimer(breakType) {
   
   data.breaks[breakType].status = 'active';
   data.breaks[breakType].snoozeUntil = null;
+  data.breaks[breakType].waitingSince = null;
   data.breaks[breakType].lastTriggered = Date.now();
   await chrome.storage.local.set({ breaks: data.breaks });
   
@@ -267,6 +285,7 @@ async function resetTimer(breakType) {
 async function pauseBreak(breakType) {
   const data = await chrome.storage.local.get('breaks');
   data.breaks[breakType].status = 'paused';
+  data.breaks[breakType].waitingSince = null;
   await chrome.storage.local.set({ breaks: data.breaks });
   
   chrome.alarms.clear(`break-${breakType}`);
