@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await renderBreaksList();
   setupGlobalControls();
   setupMasterOverride();
+  setupEventDelegation();
   
   // Refresh every second for countdown timers
   setInterval(updateCountdowns, 1000);
@@ -54,8 +55,9 @@ async function renderBreaksList() {
 function createBreakRow(breakType, config, data) {
   const div = document.createElement('div');
   div.className = 'break-row bg-base-200 rounded-lg overflow-hidden mb-2';
+  div.dataset.break = breakType;
   div.innerHTML = `
-    <div class="p-3 flex items-center justify-between cursor-pointer" onclick="toggleConfig('${breakType}')">
+    <div class="break-header p-3 flex items-center justify-between cursor-pointer" data-action="toggle-config" data-break="${breakType}">
       <div class="flex items-center gap-3">
         <span class="text-2xl">${config.icon}</span>
         <div>
@@ -67,9 +69,9 @@ function createBreakRow(breakType, config, data) {
         <span class="badge badge-sm ${getStatusBadgeClass(data.status)}">${data.status}</span>
         <input 
           type="checkbox" 
-          class="toggle toggle-sm toggle-${config.color}" 
+          class="toggle toggle-sm toggle-${config.color} break-toggle" 
           ${data.enabled ? 'checked' : ''}
-          onclick="event.stopPropagation(); toggleBreak('${breakType}', this.checked)"
+          data-break="${breakType}"
         >
       </div>
     </div>
@@ -91,21 +93,21 @@ function createBreakRow(breakType, config, data) {
               max="180"
               data-break="${breakType}"
             >
-            <button class="btn btn-sm btn-ghost" onclick="updateInterval('${breakType}')">Update</button>
+            <button class="btn btn-sm btn-ghost update-interval-btn" data-break="${breakType}">Update</button>
           </div>
         </div>
         
         <!-- Controls -->
         <div class="flex gap-2">
-          <button class="btn btn-sm btn-outline flex-1" onclick="resetTimer('${breakType}')">
+          <button class="btn btn-sm btn-outline flex-1 reset-timer-btn" data-break="${breakType}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             Reset
           </button>
-          <button class="btn btn-sm btn-outline flex-1" onclick="snoozeBreak('${breakType}', 5)">
+          <button class="btn btn-sm btn-outline flex-1 snooze-btn" data-break="${breakType}" data-minutes="5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             Snooze 5m
           </button>
-          <button class="btn btn-sm btn-outline flex-1" onclick="pauseBreak('${breakType}')">
+          <button class="btn btn-sm btn-outline flex-1 pause-btn" data-break="${breakType}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             Pause
           </button>
@@ -128,6 +130,55 @@ function getStatusBadgeClass(status) {
 function toggleConfig(breakType) {
   const panel = document.getElementById(`config-${breakType}`);
   panel.classList.toggle('open');
+}
+
+// Event Delegation Setup
+function setupEventDelegation() {
+  const container = document.getElementById('breaks-list');
+  
+  container.addEventListener('click', async (e) => {
+    const target = e.target;
+    
+    // Handle break header click (toggle config)
+    if (target.closest('.break-header')) {
+      const header = target.closest('.break-header');
+      const breakType = header.dataset.break;
+      toggleConfig(breakType);
+    }
+    
+    // Handle toggle checkbox
+    if (target.classList.contains('break-toggle')) {
+      const breakType = target.dataset.break;
+      const enabled = target.checked;
+      e.stopPropagation();
+      await toggleBreak(breakType, enabled);
+    }
+    
+    // Handle Update button
+    if (target.classList.contains('update-interval-btn')) {
+      const breakType = target.dataset.break;
+      await updateInterval(breakType);
+    }
+    
+    // Handle Reset button
+    if (target.classList.contains('reset-timer-btn')) {
+      const breakType = target.dataset.break;
+      await resetTimer(breakType);
+    }
+    
+    // Handle Snooze button
+    if (target.classList.contains('snooze-btn')) {
+      const breakType = target.dataset.break;
+      const minutes = parseInt(target.dataset.minutes, 10);
+      await snoozeBreak(breakType, minutes);
+    }
+    
+    // Handle Pause button
+    if (target.classList.contains('pause-btn')) {
+      const breakType = target.dataset.break;
+      await pauseBreak(breakType);
+    }
+  });
 }
 
 async function toggleBreak(breakType, enabled) {
