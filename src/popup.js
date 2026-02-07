@@ -53,7 +53,7 @@ async function renderBreaksList() {
 
 function createBreakRow(breakType, config, data) {
   const div = document.createElement('div');
-  div.className = 'break-row bg-base-200 rounded-lg overflow-hidden';
+  div.className = 'break-row bg-base-200 rounded-lg overflow-hidden mb-2';
   div.innerHTML = `
     <div class="p-3 flex items-center justify-between cursor-pointer" onclick="toggleConfig('${breakType}')">
       <div class="flex items-center gap-3">
