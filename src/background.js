@@ -102,8 +102,9 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   const breakType = notificationId.replace('notification-', '');
   
   if (buttonIndex === 0) {
-    // Done - dismiss notification
+    // Done - dismiss notification and reset timer
     chrome.notifications.clear(notificationId);
+    await resetTimer(breakType);
   } else if (buttonIndex === 1) {
     // Snooze 5m - snooze this specific break
     chrome.notifications.clear(notificationId);
