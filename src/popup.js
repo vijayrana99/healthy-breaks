@@ -54,71 +54,57 @@ async function renderBreaksList() {
 
 function createBreakRow(breakType, config, data) {
   const div = document.createElement('div');
-  div.className = 'break-card card bg-base-100 shadow-md border border-base-200 overflow-hidden';
+  div.className = 'bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col break-card';
   div.dataset.break = breakType;
   
   // Toggle styling based on enabled state
   const toggleChecked = data.enabled ? 'checked' : '';
+  const sliderBg = data.enabled ? 'bg-[#22C55E]' : 'bg-gray-200';
+  const dotTransform = data.enabled ? 'translate-x-6' : '';
   
   div.innerHTML = `
-    <div class="card-body p-3">
-      <!-- Header Section with Icon, Title, and Toggle -->
-      <div class="break-header flex items-center justify-between cursor-pointer" data-action="toggle-config" data-break="${breakType}">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-${config.color}/10 flex items-center justify-center text-xl">
-            ${config.icon}
-          </div>
-          <div>
-            <h3 class="font-semibold text-sm">${config.name}</h3>
-            <p class="text-xs text-base-content/60 countdown font-medium" data-break="${breakType}">--:--</p>
-          </div>
+    <!-- Header Section with Icon, Title, and Toggle -->
+    <div class="break-header flex items-center justify-between cursor-pointer" data-action="toggle-config" data-break="${breakType}">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-${config.color}-50 flex items-center justify-center">
+          <span class="text-2xl">${config.icon}</span>
         </div>
-        <label class="switch" for="checkbox-${breakType}">
-          <input 
-            type="checkbox" 
-            id="checkbox-${breakType}"
-            class="break-toggle" 
-            ${toggleChecked}
-            data-break="${breakType}"
-          >
-          <div class="slider round"></div>
-        </label>
+        <div>
+          <h3 class="font-bold text-lg text-gray-900">${config.name}</h3>
+          <p class="text-gray-500 font-medium text-sm countdown" data-break="${breakType}">Off</p>
+        </div>
+      </div>
+      <label class="switch">
+        <input 
+          type="checkbox" 
+          class="break-toggle" 
+          ${toggleChecked}
+          data-break="${breakType}"
+        >
+        <div class="toggle-slider ${sliderBg}"></div>
+        <div class="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-200 shadow-sm ${dotTransform}"></div>
+      </label>
+    </div>
+    
+    <!-- Config Panel -->
+    <div id="config-${breakType}" class="config-panel mt-4 pt-4 border-t border-gray-100">
+      <div class="flex items-center gap-3 mb-4">
+        <label class="text-sm text-gray-700 font-medium">Interval (minutes)</label>
+        <input 
+          type="number" 
+          class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22C55E] focus:border-transparent interval-input"
+          value="${data.interval}"
+          min="1"
+          max="180"
+          data-break="${breakType}"
+        >
+        <button class="px-6 py-2 bg-[#22C55E] text-white font-semibold rounded-lg hover:bg-green-600 transition-colors update-interval-btn" data-break="${breakType}">Update</button>
       </div>
       
-      <!-- Config Panel -->
-      <div id="config-${breakType}" class="config-panel bg-base-200/50 p-3 rounded-b-xl -mx-3 mt-2">
-        <div class="space-y-2">
-          <!-- Interval Input Row -->
-          <div class="flex gap-2 items-end">
-            <div class="flex-1">
-              <label class="label py-0 mb-1">
-                <span class="label-text text-xs">Interval (minutes)</span>
-              </label>
-              <input 
-                type="number" 
-                class="input input-sm input-bordered bg-white w-full interval-input" 
-                value="${data.interval}"
-                min="1"
-                max="180"
-                data-break="${breakType}"
-              >
-            </div>
-            <button class="btn btn-sm btn-primary update-interval-btn" data-break="${breakType}">Update</button>
-          </div>
-          
-          <!-- Action Grid -->
-          <div class="grid grid-cols-3 gap-2 mt-2">
-            <button class="btn btn-xs btn-outline bg-white reset-timer-btn" data-break="${breakType}">
-              Reset
-            </button>
-            <button class="btn btn-xs btn-outline bg-white snooze-btn" data-break="${breakType}" data-minutes="5">
-              Snooze
-            </button>
-            <button class="btn btn-xs btn-outline bg-white pause-btn" data-break="${breakType}">
-              Pause
-            </button>
-          </div>
-        </div>
+      <div class="flex gap-3">
+        <button class="px-6 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 hover:bg-gray-50 transition-colors reset-timer-btn" data-break="${breakType}">Reset</button>
+        <button class="px-6 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 hover:bg-gray-50 transition-colors snooze-btn" data-break="${breakType}" data-minutes="5">Snooze</button>
+        <button class="px-6 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 hover:bg-gray-50 transition-colors pause-btn" data-break="${breakType}">Pause</button>
       </div>
     </div>
   `;
@@ -299,18 +285,15 @@ async function updateCountdowns() {
       const remaining = data.snoozeUntil - Date.now();
       if (remaining > 0) {
         // Show countdown during snooze
-        el.textContent = formatTime(remaining);
-        el.classList.remove('text-error');
+        el.textContent = formatTimeWithUnit(remaining);
       } else {
         el.textContent = 'Due!';
-        el.classList.add('text-error');
       }
       return;
     }
     
     if (data.status === 'waiting') {
       el.textContent = 'Due!';
-      el.classList.add('text-error');
       return;
     }
     
@@ -319,14 +302,12 @@ async function updateCountdowns() {
       if (alarm && alarm.scheduledTime) {
         const remaining = alarm.scheduledTime - Date.now();
         if (remaining > 0) {
-          el.textContent = formatTime(remaining);
-          el.classList.remove('text-error');
+          el.textContent = formatTimeWithUnit(remaining);
         } else {
           el.textContent = 'Due!';
-          el.classList.add('text-error');
         }
       } else {
-        el.textContent = 'Ready';
+        el.textContent = 'Ready'
       }
     });
   });
@@ -337,4 +318,11 @@ function formatTime(ms) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function formatTimeWithUnit(ms) {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} Minutes`;
 }
