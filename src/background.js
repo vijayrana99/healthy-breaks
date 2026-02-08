@@ -97,14 +97,17 @@ async function handleBreakTrigger(breakType) {
 
 async function handleSnoozeEnd(breakType) {
   const data = await chrome.storage.local.get('breaks');
-  data.breaks[breakType].snoozeUntil = null;
-  data.breaks[breakType].status = 'active';
+  const breakData = data.breaks[breakType];
+  
+  if (!breakData || !breakData.enabled) return;
+  
+  // Set waiting state - show notification again
+  breakData.status = 'waiting';
+  breakData.waitingSince = Date.now();
   await chrome.storage.local.set({ breaks: data.breaks });
   
-  // Restart the break alarm
-  chrome.alarms.create(`break-${breakType}`, {
-    delayInMinutes: data.breaks[breakType].interval
-  });
+  // Show notification again - loop continues until user clicks Done
+  await handleBreakTrigger(breakType);
 }
 
 // Handle notification button clicks
@@ -144,7 +147,7 @@ chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
 async function snoozeBreak(breakType, minutes) {
   const data = await chrome.storage.local.get('breaks');
   data.breaks[breakType].snoozeUntil = Date.now() + (minutes * 60 * 1000);
-  data.breaks[breakType].status = 'snoozed';
+  data.breaks[breakType].status = 'snooze-pending';
   data.breaks[breakType].waitingSince = null;
   await chrome.storage.local.set({ breaks: data.breaks });
   
@@ -171,12 +174,15 @@ async function restoreAlarms() {
       // Still waiting for user action - notification should still be there
       // Re-show notification in case it was lost
       await handleBreakTrigger(breakType);
-    } else if (breakData.snoozeUntil && breakData.snoozeUntil > Date.now()) {
-      // Still in snooze period
+    } else if (breakData.status === 'snooze-pending' && breakData.snoozeUntil && breakData.snoozeUntil > Date.now()) {
+      // Still in snooze period - resume countdown
       const remainingMinutes = Math.ceil((breakData.snoozeUntil - Date.now()) / (60 * 1000));
       chrome.alarms.create(`snooze-${breakType}`, {
         delayInMinutes: remainingMinutes
       });
+    } else if (breakData.status === 'snooze-pending' && breakData.snoozeUntil && breakData.snoozeUntil <= Date.now()) {
+      // Snooze expired while browser was closed - show notification
+      await handleBreakTrigger(breakType);
     } else if (breakData.status === 'active') {
       // Check if we missed any triggers
       const lastTrigger = breakData.lastTriggered || Date.now();

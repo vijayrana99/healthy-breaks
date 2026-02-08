@@ -295,12 +295,15 @@ async function updateCountdowns() {
       return;
     }
     
-    if (data.status === 'snoozed' && data.snoozeUntil) {
+    if (data.status === 'snooze-pending' && data.snoozeUntil) {
       const remaining = data.snoozeUntil - Date.now();
       if (remaining > 0) {
-        el.textContent = `Snoozed`;
+        // Show countdown during snooze
+        el.textContent = formatTime(remaining);
+        el.classList.remove('text-error');
       } else {
-        el.textContent = 'Resuming...';
+        el.textContent = 'Due!';
+        el.classList.add('text-error');
       }
       return;
     }
