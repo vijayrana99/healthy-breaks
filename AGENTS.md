@@ -76,7 +76,7 @@
 | `src/background.js` | Service worker | Alarm management, notifications, state persistence |
 | `src/popup.html` | UI structure | HTML layout, Tailwind classes |
 | `src/popup.js` | UI logic | Event handling, countdown updates, command dispatch |
-| `src/tailwind.min.css` | Bundled styles | Tailwind + DaisyUI (regenerate if UI changes) |
+| `src/tailwind.min.css` | Bundled styles | Tailwind CSS with custom theme (regenerate if UI changes) |
 | `tests/healthy-breaks.spec.js` | E2E tests | Validation tests |
 
 ---
@@ -226,55 +226,95 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 ### Break Card Structure
 
 ```html
-<div class="break-card card bg-base-100 shadow-md border border-base-200 overflow-hidden">
-  <div class="card-body p-3">
-    <!-- Header: Icon + Title + Toggle -->
-    <div class="break-header flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full bg-{color}/10">
-          {icon}
-        </div>
-        <div>
-          <h3 class="font-semibold text-sm">{name}</h3>
-          <p class="countdown">{time}</p>
-        </div>
+<div class="break-card bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+  <!-- Header: Icon + Title + Toggle -->
+  <div class="break-header flex items-center justify-between cursor-pointer">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-{color}-50 flex items-center justify-center">
+        <span class="text-2xl">{icon}</span>
       </div>
-      <label class="switch">
-        <input type="checkbox" class="break-toggle">
-        <div class="slider round"></div>
-      </label>
-    </div>
-    
-    <!-- Config Panel (expandable) -->
-    <div class="config-panel">
-      <div class="bg-base-200/50 p-3 rounded-b-xl">
-        <!-- Interval input + Update button -->
-        <!-- Action grid: Reset | Snooze | Pause -->
+      <div>
+        <h3 class="font-bold text-lg text-gray-900">{name}</h3>
+        <p class="text-gray-500 font-medium text-sm countdown">{time}</p>
       </div>
     </div>
+    <label class="switch">
+      <input type="checkbox" class="break-toggle">
+      <div class="toggle-slider"></div>
+      <div class="toggle-dot"></div>
+    </label>
+  </div>
+  
+  <!-- Config Panel (expandable) -->
+  <div id="config-{type}" class="config-panel mt-4 pt-4 border-t border-gray-100">
+    <!-- Interval input row -->
+    <!-- Action buttons: Reset | Snooze | Pause -->
   </div>
 </div>
 ```
 
+### Design System
+
+**Font:** Inter (weights: 400, 500, 600, 700)
+
+**Colors:**
+- Background: `#F8F8F8` (light gray)
+- Card background: `#FFFFFF` (white)
+- Brand green: `#22C55E`
+- Text primary: `text-gray-900`
+- Text secondary: `text-gray-500`
+- Border: `border-gray-100`
+
+**Card Styling:**
+- White background with subtle shadow
+- Rounded corners (`rounded-2xl`)
+- 16px padding inside
+- 1px light gray border
+
 ### Custom Toggle Switch
 
-The toggle uses pure CSS (no JavaScript):
+The toggle uses pure CSS with smooth animation:
 
 ```css
 .switch {
-  display: inline-block;
-  height: 24px;
   position: relative;
-  width: 44px;
+  display: inline-block;
+  width: 56px;
+  height: 32px;
 }
-.switch input { display: none; }
-.slider {
-  background-color: #ccc;    /* Gray when OFF */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #E5E7EB;  /* Gray when OFF */
   transition: .3s;
-  border-radius: 24px;
+  border-radius: 32px;
 }
-input:checked + .slider {
-  background-color: #66bb6a; /* Green when ON */
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+input:checked + .toggle-slider {
+  background-color: #22C55E;  /* Green when ON */
+}
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
 }
 ```
 
@@ -342,8 +382,10 @@ Before committing changes, verify:
 2. **Privacy First:** No external servers, all data in `chrome.storage.local`
 3. **Action-Required:** Timer doesn't auto-restart; requires user interaction
 4. **Waiting State:** Distinct state when notification is shown but not acted upon
-5. **2-Column Grid:** Symmetrical layout for 4 break types
+5. **Vertical Stack:** Clean list layout for break cards
 6. **Custom Toggle:** Pure CSS switch for visual consistency
+7. **Inter Font:** Modern, clean typography for professional look
+8. **White Cards:** Clean white design with subtle shadows on light gray background
 
 ---
 
@@ -367,7 +409,7 @@ healthy-breaks/
 ├── docs/
 │   └── plans/
 │       └── 2025-02-07-healthy-breaks-implementation.md
-├── tailwind.config.js        # Tailwind config with DaisyUI
+├── tailwind.config.js        # Tailwind config with Inter font
 ├── package.json
 ├── playwright.config.js
 ├── README.md                 # User documentation

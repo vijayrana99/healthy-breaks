@@ -65,7 +65,7 @@ npm test
 ## Technical Stack
 
 - Manifest V3 (Chrome Extension)
-- Tailwind CSS + DaisyUI (CDN)
+- Tailwind CSS with Inter font
 - Chrome APIs: alarms, storage, notifications
 - Playwright (E2E testing)
 
