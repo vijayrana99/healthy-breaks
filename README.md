@@ -9,6 +9,8 @@ A privacy-first Chrome extension for health reminders. All data stays on your de
 - **Walk Break**: Walk and stretch every hour
 - **Posture Check**: Maintain good posture with 30-minute checks
 
+- **more coming soon**
+
 ## Installation
 
 ### Developer Mode
