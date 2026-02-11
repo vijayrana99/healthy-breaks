@@ -63,13 +63,11 @@ test.describe('Healthy Breaks Extension - Validation', () => {
     // Check for styling libraries (local files for CSP compliance)
     expect(popupContent).toContain('tailwind.min.css');
     
-    // Check for Master Override elements
-    expect(popupContent).toContain('id="master-interval"');
-    expect(popupContent).toContain('id="apply-master"');
+    // Check for Master Controls elements (removed interval input and apply button)
     expect(popupContent).toContain('id="reset-all"');
     expect(popupContent).toContain('id="snooze-all"');
     expect(popupContent).toContain('id="pause-all"');
-    expect(popupContent).toContain('Master Override');
+    expect(popupContent).toContain('Master Controls');
     
     console.log('✓ Popup HTML validation passed');
   });
@@ -95,9 +93,8 @@ test.describe('Healthy Breaks Extension - Validation', () => {
     expect(popupJsContent).toContain('expandedBreakId');
     expect(popupJsContent).toContain('toggleExpand');
     
-    // Check for Master Override
+    // Check for Master Controls (removed setMasterInterval)
     expect(popupJsContent).toContain('setupMasterOverride');
-    expect(popupJsContent).toContain('setMasterInterval');
     expect(popupJsContent).toContain('resetAll');
     expect(popupJsContent).toContain('snoozeAll');
     expect(popupJsContent).toContain('pauseAll');

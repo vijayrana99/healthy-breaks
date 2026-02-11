@@ -369,31 +369,9 @@ function formatTimeWithUnit(ms) {
 }
 
 function setupMasterOverride() {
-  const masterIntervalInput = document.getElementById('master-interval');
-  const applyBtn = document.getElementById('apply-master');
   const resetAllBtn = document.getElementById('reset-all');
   const snoozeAllBtn = document.getElementById('snooze-all');
   const pauseAllBtn = document.getElementById('pause-all');
-
-  if (applyBtn) {
-    applyBtn.addEventListener('click', async () => {
-      const interval = parseInt(masterIntervalInput.value, 10);
-      if (!interval || interval < 1 || interval > 180) {
-        alert('Please enter a valid interval (1-180 minutes)');
-        return;
-      }
-      
-      await chrome.runtime.sendMessage({
-        action: 'setMasterInterval',
-        interval
-      });
-      
-      // Clear the input after applying
-      masterIntervalInput.value = '';
-      await renderBreaksList();
-      await updateMasterPauseButton();
-    });
-  }
 
   if (resetAllBtn) {
     resetAllBtn.addEventListener('click', async () => {
