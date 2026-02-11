@@ -222,6 +222,7 @@ function setupEventDelegation() {
     if (target.classList.contains('pause-btn')) {
       const breakType = target.dataset.break;
       await pauseBreak(breakType);
+      await updateMasterPauseButton();
     }
   });
 }
@@ -238,6 +239,7 @@ async function toggleBreak(breakType, enabled) {
     enabled
   });
   await renderBreaksList();
+  await updateMasterPauseButton();
 }
 
 async function updateInterval(breakType) {
@@ -367,6 +369,7 @@ function setupMasterOverride() {
       // Clear the input after applying
       masterIntervalInput.value = '';
       await renderBreaksList();
+      await updateMasterPauseButton();
     });
   }
 
@@ -374,6 +377,7 @@ function setupMasterOverride() {
     resetAllBtn.addEventListener('click', async () => {
       await chrome.runtime.sendMessage({ action: 'resetAll' });
       await renderBreaksList();
+      await updateMasterPauseButton();
     });
   }
 
@@ -381,13 +385,58 @@ function setupMasterOverride() {
     snoozeAllBtn.addEventListener('click', async () => {
       await chrome.runtime.sendMessage({ action: 'snoozeAll', minutes: 5 });
       await renderBreaksList();
+      await updateMasterPauseButton();
     });
   }
 
   if (pauseAllBtn) {
     pauseAllBtn.addEventListener('click', async () => {
-      await chrome.runtime.sendMessage({ action: 'pauseAll' });
+      const breaksData = await getBreaksData();
+      const hasActiveBreaks = Object.entries(breaksData).some(([type, data]) => {
+        return data.enabled && data.status !== 'paused';
+      });
+      
+      if (hasActiveBreaks) {
+        await chrome.runtime.sendMessage({ action: 'pauseAll' });
+      } else {
+        await chrome.runtime.sendMessage({ action: 'resumeAll' });
+      }
       await renderBreaksList();
+      await updateMasterPauseButton();
     });
+  }
+  
+  // Initial button state update
+  updateMasterPauseButton();
+}
+
+async function updateMasterPauseButton() {
+  const breaksData = await getBreaksData();
+  const pauseAllBtn = document.getElementById('pause-all');
+  
+  if (!pauseAllBtn) return;
+  
+  // Check if any enabled break is active (not paused)
+  const hasActiveBreaks = Object.entries(breaksData).some(([type, data]) => {
+    return data.enabled && data.status !== 'paused';
+  });
+  
+  if (hasActiveBreaks) {
+    // Show Pause button
+    pauseAllBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="4" width="4" height="16"/>
+        <rect x="14" y="4" width="4" height="16"/>
+      </svg>
+      <span>Pause</span>
+    `;
+  } else {
+    // Show Resume button
+    pauseAllBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+      <span>Resume</span>
+    `;
   }
 }

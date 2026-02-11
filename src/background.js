@@ -264,6 +264,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           await pauseAll();
           sendResponse({ success: true });
           break;
+        case 'resumeAll':
+          await resumeAll();
+          sendResponse({ success: true });
+          break;
         case 'setMasterInterval':
           await setMasterInterval(request.interval);
           sendResponse({ success: true });
@@ -363,6 +367,28 @@ async function pauseAll() {
   for (const breakType of Object.keys(data.breaks)) {
     if (data.breaks[breakType].enabled) {
       await pauseBreak(breakType);
+    }
+  }
+}
+
+async function resumeBreak(breakType) {
+  const data = await chrome.storage.local.get('breaks');
+  if (!data.breaks[breakType].enabled || data.breaks[breakType].status !== 'paused') return;
+  
+  data.breaks[breakType].status = 'active';
+  data.breaks[breakType].lastTriggered = Date.now();
+  await chrome.storage.local.set({ breaks: data.breaks });
+  
+  chrome.alarms.create(`break-${breakType}`, {
+    delayInMinutes: data.breaks[breakType].interval
+  });
+}
+
+async function resumeAll() {
+  const data = await chrome.storage.local.get('breaks');
+  for (const breakType of Object.keys(data.breaks)) {
+    if (data.breaks[breakType].enabled && data.breaks[breakType].status === 'paused') {
+      await resumeBreak(breakType);
     }
   }
 }
