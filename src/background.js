@@ -350,11 +350,18 @@ async function pauseBreak(breakType) {
   // Calculate remaining time before pausing
   // Use lastTriggered + interval (same as popup display) instead of alarm.scheduledTime
   // This ensures consistency - alarm.scheduledTime can diverge due to minute rounding
-  let remainingMs = data.breaks[breakType].interval * 60 * 1000; // Default to full interval
+  let remainingMs;
   
-  if (data.breaks[breakType].lastTriggered) {
-    const intervalMs = data.breaks[breakType].interval * 60 * 1000;
-    remainingMs = Math.max(0, (data.breaks[breakType].lastTriggered + intervalMs) - Date.now());
+  if (data.breaks[breakType].status === 'snoozed' && data.breaks[breakType].snoozeUntil) {
+    // Snoozed: calculate from snoozeUntil (e.g., 5:00 snooze timer)
+    remainingMs = Math.max(0, data.breaks[breakType].snoozeUntil - Date.now());
+  } else {
+    // Normal: calculate from lastTriggered + interval
+    remainingMs = data.breaks[breakType].interval * 60 * 1000; // Default to full interval
+    if (data.breaks[breakType].lastTriggered) {
+      const intervalMs = data.breaks[breakType].interval * 60 * 1000;
+      remainingMs = Math.max(0, (data.breaks[breakType].lastTriggered + intervalMs) - Date.now());
+    }
   }
   
   data.breaks[breakType].status = 'paused';
