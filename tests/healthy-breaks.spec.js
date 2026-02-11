@@ -51,17 +51,25 @@ test.describe('Healthy Breaks Extension - Validation', () => {
     
     // Check for required elements
     expect(popupContent).toContain('id="breaks-list"');
+    
+    // Check for iOS design elements
+    expect(popupContent).toContain('background-color: #f2f2f7'); // iOS background color
+    expect(popupContent).toContain('ios-toggle');
+    
+    // Check for local Inter font
+    expect(popupContent).toContain("fonts/Inter-Regular.ttf");
+    expect(popupContent).toContain("fonts/Inter-Bold.ttf");
+    
+    // Check for styling libraries (local files for CSP compliance)
+    expect(popupContent).toContain('tailwind.min.css');
+    
+    // Check for Master Override elements
     expect(popupContent).toContain('id="master-interval"');
     expect(popupContent).toContain('id="apply-master"');
     expect(popupContent).toContain('id="reset-all"');
     expect(popupContent).toContain('id="snooze-all"');
     expect(popupContent).toContain('id="pause-all"');
-    
-    // Check for styling libraries (local files for CSP compliance)
-    expect(popupContent).toContain('tailwind.min.css');
-    
-    // Check for privacy notice
-    expect(popupContent).toContain('No data leaves your device');
+    expect(popupContent).toContain('Master Override');
     
     console.log('✓ Popup HTML validation passed');
   });
@@ -79,9 +87,24 @@ test.describe('Healthy Breaks Extension - Validation', () => {
     expect(popupJsContent).toContain('resetTimer');
     expect(popupJsContent).toContain('snoozeBreak');
     expect(popupJsContent).toContain('pauseBreak');
-    expect(popupJsContent).toContain('setupGlobalControls');
-    expect(popupJsContent).toContain('setupMasterOverride');
     expect(popupJsContent).toContain('updateCountdowns');
+    
+    // Check for iOS design elements
+    expect(popupJsContent).toContain('ICONS');
+    expect(popupJsContent).toContain('ios-toggle');
+    expect(popupJsContent).toContain('expandedBreakId');
+    expect(popupJsContent).toContain('toggleExpand');
+    
+    // Check for Master Override
+    expect(popupJsContent).toContain('setupMasterOverride');
+    expect(popupJsContent).toContain('setMasterInterval');
+    expect(popupJsContent).toContain('resetAll');
+    expect(popupJsContent).toContain('snoozeAll');
+    expect(popupJsContent).toContain('pauseAll');
+    
+    // Check for compact card styling
+    expect(popupJsContent).toContain('p-2 flex items-center');
+    expect(popupJsContent).toContain('text-sm font-bold text-gray-900');
     
     // Check for all 4 break types
     expect(popupJsContent).toContain('eye');
