@@ -118,7 +118,7 @@ function createBreakCard(breakType, config, data) {
     </div>
 
     <!-- Expandable Config Panel -->
-    <div id="config-${breakType}" class="config-panel ${isExpanded ? 'open' : ''}" onclick="event.stopPropagation()">
+    <div id="config-${breakType}" class="config-panel ${isExpanded ? 'open' : ''}">
       <div class="px-5 pb-5 border-t border-gray-100">
         <div class="pt-5 space-y-4">
           <!-- Interval Input -->
@@ -168,6 +168,12 @@ function createBreakCard(breakType, config, data) {
       </div>
     </div>
   `;
+  
+  // Add event listener to config panel to stop propagation (CSP compliant)
+  const configPanel = div.querySelector('.config-panel');
+  if (configPanel) {
+    configPanel.addEventListener('click', (e) => e.stopPropagation());
+  }
   
   return div;
 }
