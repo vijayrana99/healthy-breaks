@@ -22,6 +22,24 @@ const BREAK_TYPES = {
     icon: '🧘',
     defaultInterval: 30,
     description: 'Check and correct your posture'
+  },
+  hand: {
+    name: 'Hand & Wrist Break',
+    icon: '✋',
+    defaultInterval: 30,
+    description: 'Shake out hands, stretch fingers, and gently stretch wrists to prevent RSI'
+  },
+  mental: {
+    name: 'Mental Reset',
+    icon: '🧠',
+    defaultInterval: 90,
+    description: '5 minutes of mental disengagement - stare out window, close eyes, meditate'
+  },
+  breathing: {
+    name: 'Deep Breathing',
+    icon: '🌬️',
+    defaultInterval: 60,
+    description: '60 seconds of deep diaphragmatic breathing to lower stress and increase oxygen'
   }
 };
 
