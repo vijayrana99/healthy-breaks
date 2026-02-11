@@ -88,7 +88,7 @@ function createBreakCard(breakType, config, data) {
   const div = document.createElement('div');
   const isExpanded = expandedBreakId === breakType;
   
-  div.className = `bg-white rounded-2xl shadow-sm mb-4 transition-all duration-300 overflow-hidden cursor-pointer break-card ${isExpanded ? 'expanded' : ''}`;
+  div.className = `bg-white rounded-2xl shadow-sm mb-4 transition-all duration-300 overflow-hidden break-card ${isExpanded ? 'expanded' : ''}`;
   div.dataset.break = breakType;
   
   div.innerHTML = `
@@ -99,8 +99,8 @@ function createBreakCard(breakType, config, data) {
           ${ICONS[config.icon]}
         </div>
         <div class="flex flex-col">
-          <h3 class="text-sm font-bold text-gray-900">${config.name}</h3>
-          <span class="text-sm font-medium text-gray-500 countdown" data-break="${breakType}">
+          <h3 class="text-sm font-bold text-gray-900 expand-trigger cursor-pointer">${config.name}</h3>
+          <span class="text-sm font-medium text-gray-500 countdown expand-trigger cursor-pointer" data-break="${breakType}">
             ${getInitialStatusText(data)}
           </span>
         </div>
@@ -184,11 +184,13 @@ function setupEventDelegation() {
   container.addEventListener('click', async (e) => {
     const target = e.target;
     
-    // Handle card click (toggle expand)
-    const card = target.closest('.break-card');
-    if (card && !target.closest('.ios-toggle') && !target.closest('button') && !target.closest('input')) {
-      const breakType = card.dataset.break;
-      toggleExpand(breakType);
+    // Handle title/countdown click (toggle expand)
+    if (target.closest('.expand-trigger')) {
+      const card = target.closest('.break-card');
+      if (card) {
+        const breakType = card.dataset.break;
+        toggleExpand(breakType);
+      }
     }
     
     // Handle toggle checkbox
