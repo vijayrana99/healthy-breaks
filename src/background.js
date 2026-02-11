@@ -314,8 +314,10 @@ async function toggleBreak(breakType, enabled) {
 async function updateInterval(breakType, interval) {
   const data = await chrome.storage.local.get('breaks');
   data.breaks[breakType].interval = interval;
+  // Reset timer to start from full new interval (regardless of current state)
+  data.breaks[breakType].lastTriggered = Date.now();
   await chrome.storage.local.set({ breaks: data.breaks });
-  
+
   // Restart alarm with new interval if active
   if (data.breaks[breakType].enabled && data.breaks[breakType].status === 'active') {
     chrome.alarms.clear(`break-${breakType}`);
