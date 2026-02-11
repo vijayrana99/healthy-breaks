@@ -6,6 +6,14 @@
 
 **Healthy Breaks** is a privacy-first Chrome Extension that reminds users to take health breaks (Eye, Water, Walk, Posture). Built with Manifest V3, it uses the browser's alarm system to trigger notifications even when the popup is closed.
 
+**Key Features:**
+- iOS-style modern UI with smooth animations
+- Completely offline (all assets bundled locally)
+- Local Inter font (4 weights: 400, 500, 600, 700)
+- Lucide SVG icons (no emojis)
+- Hidden scrollbar with functional scrolling
+- Master Override for global break controls
+
 ---
 
 ## Architecture Overview
@@ -29,22 +37,22 @@
           ┌────────────────────┼────────────────────┐
           │                    │                    │
           ▼                    ▼                    ▼
-    ┌──────────┐       ┌──────────┐        ┌──────────┐
-    │   Done   │       │  Snooze  │        │  Close   │
-    │  button  │       │  5m btn  │        │   notif  │
-    └────┬─────┘       └────┬─────┘        └────┬─────┘
-         │                  │                   │
-         ▼                  ▼                   ▼
-    ┌──────────┐       ┌──────────┐       ┌──────────┐
-    │  active  │       │ snoozed  │       │  active  │
-    │(reset to│       │(5m delay)│       │(reset)   │
-    │ interval)│       └────┬─────┘       └──────────┘
-    └──────────┘            │
-                            │ snooze ends
-                            ▼
-                       ┌──────────┐
-                       │ waiting  │
-                       └──────────┘
+     ┌──────────┐       ┌──────────┐        ┌──────────┐
+     │   Done   │       │  Snooze  │        │  Close   │
+     │  button  │       │  5m btn  │        │   notif  │
+     └────┬─────┘       └────┬─────┘        └────┬─────┘
+          │                  │                   │
+          ▼                  ▼                   ▼
+     ┌──────────┐       ┌──────────┐       ┌──────────┐
+     │  active  │       │ snoozed  │       │  active  │
+     │(reset to│       │(5m delay)│       │(reset)   │
+     │ interval)│       └────┬─────┘       └──────────┘
+     └──────────┘            │
+                             │ snooze ends
+                             ▼
+                        ┌──────────┐
+                        │ waiting  │
+                        └──────────┘
 ```
 
 ### Data Flow
@@ -59,7 +67,7 @@
    - Reads state from storage
    - Sends commands to background via `chrome.runtime.sendMessage`
    - Displays countdown timers
-   - Shows configuration panels
+   - Shows configuration panels (expandable)
 
 3. **Notifications**
    - System-level desktop alerts
@@ -72,12 +80,13 @@
 
 | File | Purpose | Key Functions |
 |------|---------|---------------|
-| `manifest.json` | Extension config | Permissions, entry points |
+| `manifest.json` | Extension config | Permissions, entry points, web_accessible_resources |
 | `src/background.js` | Service worker | Alarm management, notifications, state persistence |
-| `src/popup.html` | UI structure | HTML layout, Tailwind classes |
+| `src/popup.html` | UI structure | HTML layout, Tailwind classes, inline styles |
 | `src/popup.js` | UI logic | Event handling, countdown updates, command dispatch |
-| `src/tailwind.min.css` | Bundled styles | Tailwind CSS with custom theme (regenerate if UI changes) |
-| `tests/healthy-breaks.spec.js` | E2E tests | Validation tests |
+| `src/tailwind.min.css` | Bundled styles | Tailwind CSS (regenerate if UI changes) |
+| `src/fonts/Inter-*.ttf` | Local font files | Inter font (4 weights for offline use) |
+| `tests/healthy-breaks.spec.js` | E2E tests | Validation tests (6 tests) |
 
 ---
 
@@ -114,7 +123,7 @@
 npx tailwindcss -i ./src/input.css -o ./src/tailwind.min.css --minify
 ```
 
-**Why:** Tailwind is bundled locally for CSP compliance. The CSS file contains only the classes used in the HTML/JS files.
+**Why:** Tailwind is bundled locally for CSP compliance and offline functionality. The CSS file contains only the classes used in the HTML/JS files.
 
 ### 2. Run Tests
 
@@ -152,7 +161,7 @@ npm run test:debug         # Debug mode
 ```javascript
 newbreak: {
   name: 'New Break',
-  icon: '🆕',
+  icon: 'new-icon',
   defaultInterval: 45,
   description: 'Description of the break'
 }
@@ -162,13 +171,22 @@ newbreak: {
 ```javascript
 newbreak: {
   name: 'New Break',
-  icon: '🆕',
+  icon: 'activity',  // Lucide icon name
   defaultInterval: 45,
-  color: 'orange'  // Tailwind color name
+  color: '#f97316'  // Custom color (orange-500)
 }
 ```
 
-3. **Regenerate Tailwind CSS** to include new color classes
+3. **Add Lucide icon to ICONS object:**
+```javascript
+const ICONS = {
+  // ... existing icons
+  activity: `<svg>...</svg>`,
+  // ...
+}
+```
+
+4. **Regenerate Tailwind CSS** to include new color classes
 
 ### Modifying Notification Behavior
 
@@ -226,29 +244,81 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 ### Break Card Structure
 
 ```html
-<div class="break-card bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+<div class="break-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer">
   <!-- Header: Icon + Title + Toggle -->
-  <div class="break-header flex items-center justify-between cursor-pointer">
-    <div class="flex items-center gap-4">
-      <div class="w-12 h-12 rounded-full bg-{color}-50 flex items-center justify-center">
-        <span class="text-2xl">{icon}</span>
+  <div class="break-header p-2 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <div class="p-2 bg-gray-50 rounded-lg" style="color: ${config.color}">
+        ${ICONS[config.icon]}
       </div>
-      <div>
-        <h3 class="font-bold text-lg text-gray-900">{name}</h3>
-        <p class="text-gray-500 font-medium text-sm countdown">{time}</p>
+      <div class="flex flex-col">
+        <h3 class="text-sm font-bold text-gray-900">${config.name}</h3>
+        <span class="text-sm font-medium text-gray-500 countdown" data-break="${breakType}">
+          ${getInitialStatusText(data)}
+        </span>
       </div>
     </div>
-    <label class="switch">
-      <input type="checkbox" class="break-toggle">
-      <div class="toggle-slider"></div>
-      <div class="toggle-dot"></div>
-    </label>
+    
+    <div class="flex items-center space-x-3">
+      ${isExpanded ? ICONS.chevronUp : ICONS.chevronDown}
+      <input 
+        type="checkbox" 
+        class="ios-toggle break-toggle" 
+        ${data.enabled ? 'checked' : ''}
+        data-break="${breakType}"
+      >
+    </div>
   </div>
   
   <!-- Config Panel (expandable) -->
-  <div id="config-{type}" class="config-panel mt-4 pt-4 border-t border-gray-100">
-    <!-- Interval input row -->
-    <!-- Action buttons: Reset | Snooze | Pause -->
+  <div id="config-${breakType}" class="config-panel">
+    <div class="px-5 pb-5 border-t border-gray-100">
+      <div class="pt-5 space-y-4">
+        <!-- Interval input row -->
+        <!-- Action buttons: Reset | Snooze | Pause -->
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### Master Override Section
+
+```html
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <!-- Header -->
+  <div class="p-4 border-b border-gray-100">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-bold text-gray-900">Master Override</h2>
+        <p class="text-sm text-gray-500 font-medium mt-0.5">Set all intervals</p>
+      </div>
+      <div class="p-2 bg-gray-50 rounded-lg">
+        <!-- Settings gear icon -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Interval Input -->
+  <div class="px-4" style="padding-top: 0px; padding-bottom: 0px;">
+    <div class="flex items-center gap-3">
+      <input 
+        type="number" 
+        id="master-interval" 
+        placeholder="Minutes"
+        style="padding-left: 10px;"
+      >
+      <button id="apply-master">Apply</button>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="p-4">
+    <div class="grid grid-cols-3 gap-3">
+      <button id="reset-all">Reset</button>
+      <button id="snooze-all">Snooze</button>
+      <button id="pause-all">Pause</button>
+    </div>
   </div>
 </div>
 ```
@@ -256,67 +326,99 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 ### Design System
 
 **Font:** Inter (weights: 400, 500, 600, 700)
+- Self-hosted in `src/fonts/` directory
+- Loaded via @font-face declarations in popup.html
 
 **Colors:**
-- Background: `#F8F8F8` (light gray)
+- Background: `#f2f2f7` (iOS system gray)
 - Card background: `#FFFFFF` (white)
 - Brand green: `#22C55E`
 - Text primary: `text-gray-900`
 - Text secondary: `text-gray-500`
-- Border: `border-gray-100`
+- Border: `border-gray-100` / `border-gray-200`
+- Break type colors:
+  - Eye: `#92400e` (amber-800)
+  - Water: `#3b82f6` (blue-500)
+  - Walk: `#4b5563` (gray-600)
+  - Posture: `#8b5cf6` (violet-500)
 
 **Card Styling:**
 - White background with subtle shadow
 - Rounded corners (`rounded-2xl`)
-- 16px padding inside
+- 16px padding (varies by section)
 - 1px light gray border
 
-### Custom Toggle Switch
-
-The toggle uses pure CSS with smooth animation:
+### Custom iOS Toggle Switch
 
 ```css
-.switch {
-  position: relative;
-  display: inline-block;
+.ios-toggle {
+  appearance: none;
   width: 56px;
   height: 32px;
-}
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #E5E7EB;  /* Gray when OFF */
-  transition: .3s;
+  background-color: #d1d5db;
   border-radius: 32px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
-.toggle-slider:before {
+.ios-toggle::after {
+  content: '';
   position: absolute;
-  content: "";
-  height: 24px;
-  width: 24px;
-  left: 4px;
-  bottom: 4px;
+  top: 2px;
+  left: 2px;
+  width: 28px;
+  height: 28px;
   background-color: white;
-  transition: .3s;
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1), box-shadow 0.35s ease;
 }
-input:checked + .toggle-slider {
-  background-color: #22C55E;  /* Green when ON */
+.ios-toggle:checked {
+  background-color: #22C55E;
 }
-input:checked + .toggle-slider:before {
+.ios-toggle:checked::after {
   transform: translateX(24px);
 }
+.ios-toggle:active::after {
+  transform: scale(0.95);
+}
 ```
+
+### Hidden Scrollbar
+
+```css
+body {
+  overflow-y: auto;
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE and Edge */
+}
+body::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari, Opera */
+}
+```
+
+---
+
+## Lucide Icons
+
+The extension uses inline SVG icons from Lucide:
+
+```javascript
+const ICONS = {
+  eye: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"...>`,
+  droplets: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"...>`,
+  footprints: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"...>`,
+  activity: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"...>`,
+  chevronDown: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"...>`,
+  chevronUp: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"...>`
+};
+```
+
+**Benefits:**
+- No external dependencies
+- Works offline
+- CSP compliant
+- Consistent sizing
 
 ---
 
@@ -357,6 +459,21 @@ This means the alarm hasn't been created. Check:
 3. **Clear storage** if state is corrupted:
    - Service Worker console: `chrome.storage.local.clear()`
 
+### Font Not Loading
+
+If Inter font doesn't load:
+1. Check file paths in @font-face declarations
+2. Verify fonts are in `src/fonts/` directory
+3. Check `web_accessible_resources` in manifest.json
+4. Try hard-refreshing the extension
+
+### Scrollbar Still Visible
+
+If scrollbar appears:
+1. Verify CSS is in popup.html `<style>` block
+2. Check browser compatibility
+3. Ensure no conflicting overflow styles
+
 ---
 
 ## Testing Checklist
@@ -373,6 +490,10 @@ Before committing changes, verify:
 - [ ] Closing notification resets timer
 - [ ] Browser restart restores alarms
 - [ ] No CSP errors in console
+- [ ] Works offline (no external requests)
+- [ ] Scrollbar is hidden but scrolling works
+- [ ] Toggle animation is smooth
+- [ ] Inter font loads correctly
 
 ---
 
@@ -380,12 +501,14 @@ Before committing changes, verify:
 
 1. **CSP Compliance:** All CSS/JS bundled locally, no CDN
 2. **Privacy First:** No external servers, all data in `chrome.storage.local`
-3. **Action-Required:** Timer doesn't auto-restart; requires user interaction
-4. **Waiting State:** Distinct state when notification is shown but not acted upon
-5. **Vertical Stack:** Clean list layout for break cards
-6. **Custom Toggle:** Pure CSS switch for visual consistency
-7. **Inter Font:** Modern, clean typography for professional look
-8. **White Cards:** Clean white design with subtle shadows on light gray background
+3. **Offline First:** Local fonts, local Tailwind, inline SVG icons
+4. **Action-Required:** Timer doesn't auto-restart; requires user interaction
+5. **Waiting State:** Distinct state when notification is shown but not acted upon
+6. **iOS Design:** Modern, clean aesthetic with smooth animations
+7. **Custom Toggle:** Pure CSS iOS-style switch with spring physics
+8. **Inter Font:** Professional typography, self-hosted
+9. **Hidden Scrollbar:** Clean look while maintaining functionality
+10. **Local Assets:** No external dependencies for complete offline functionality
 
 ---
 
@@ -393,22 +516,27 @@ Before committing changes, verify:
 
 ```
 healthy-breaks/
-├── manifest.json              # MV3 manifest
+├── manifest.json              # MV3 manifest with web_accessible_resources
 ├── src/
 │   ├── background.js          # Service worker (alarms, notifications)
-│   ├── popup.html            # UI structure
-│   ├── popup.js              # UI logic
+│   ├── popup.html            # UI structure with inline styles
+│   ├── popup.js              # UI logic and event handling
 │   ├── input.css             # Tailwind source
 │   ├── tailwind.min.css      # Bundled CSS (regenerate on change)
+│   ├── fonts/                # Local Inter font files
+│   │   ├── Inter-Regular.ttf
+│   │   ├── Inter-Medium.ttf
+│   │   ├── Inter-SemiBold.ttf
+│   │   └── Inter-Bold.ttf
 │   └── icons/
 │       ├── icon16.png
 │       ├── icon48.png
 │       └── icon128.png
 ├── tests/
-│   └── healthy-breaks.spec.js # E2E tests
+│   └── healthy-breaks.spec.js # E2E tests (6 tests)
 ├── docs/
 │   └── plans/
-│       └── 2025-02-07-healthy-breaks-implementation.md
+│       └── 2025-02-07-healthy-breaks-implementation.md (COMPLETED)
 ├── tailwind.config.js        # Tailwind config with Inter font
 ├── package.json
 ├── playwright.config.js
@@ -421,9 +549,10 @@ healthy-breaks/
 ## Questions?
 
 If you're an AI agent working on this codebase and something isn't clear:
-1. Check the implementation plan in `docs/plans/`
+1. Check the implementation plan in `docs/plans/` (archived)
 2. Review the commit history (`git log --oneline`)
 3. Check for error messages in the Service Worker console
 4. Run tests to see what's failing
+5. Refer to the Troubleshooting section above
 
 **Remember:** This extension handles user health data, so maintain privacy-first principles and test thoroughly before changes.
