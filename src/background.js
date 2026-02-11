@@ -46,9 +46,11 @@ const BREAK_TYPES = {
 // Initialize storage with defaults (all disabled)
 chrome.runtime.onInstalled.addListener(async () => {
   const existing = await chrome.storage.local.get('breaks');
-  if (!existing.breaks) {
-    const initialBreaks = {};
-    Object.keys(BREAK_TYPES).forEach(key => {
+  const initialBreaks = existing.breaks || {};
+
+  // Add any missing break types (handles updates for existing users)
+  Object.keys(BREAK_TYPES).forEach(key => {
+    if (!initialBreaks[key]) {
       initialBreaks[key] = {
         enabled: false,
         interval: BREAK_TYPES[key].defaultInterval,
@@ -57,12 +59,13 @@ chrome.runtime.onInstalled.addListener(async () => {
         lastTriggered: null,
         waitingSince: null
       };
-    });
-    await chrome.storage.local.set({ 
-      breaks: initialBreaks,
-      masterInterval: null
-    });
-  }
+    }
+  });
+
+  await chrome.storage.local.set({
+    breaks: initialBreaks,
+    masterInterval: null
+  });
 });
 
 // Alarm names follow pattern: "break-{type}"
@@ -184,8 +187,11 @@ chrome.runtime.onInstalled.addListener(restoreAlarms);
 async function restoreAlarms() {
   const data = await chrome.storage.local.get('breaks');
   if (!data.breaks) return;
-  
+
   for (const [breakType, breakData] of Object.entries(data.breaks)) {
+    // Skip if break type no longer exists (defensive)
+    if (!BREAK_TYPES[breakType]) continue;
+
     if (!breakData.enabled) continue;
     
     if (breakData.status === 'waiting') {
