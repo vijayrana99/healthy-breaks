@@ -391,7 +391,10 @@ async function resumeBreak(breakType) {
   if (!data.breaks[breakType].enabled || data.breaks[breakType].status !== 'paused') return;
   
   // Get stored remaining time or default to full interval
-  const remainingMs = data.breaks[breakType].pausedRemainingMs || (data.breaks[breakType].interval * 60 * 1000);
+  const pausedMs = data.breaks[breakType].pausedRemainingMs;
+  const remainingMs = (typeof pausedMs === 'number' && pausedMs > 0) 
+    ? pausedMs 
+    : (data.breaks[breakType].interval * 60 * 1000);
   const remainingMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000))); // At least 1 minute
   
   data.breaks[breakType].status = 'active';
