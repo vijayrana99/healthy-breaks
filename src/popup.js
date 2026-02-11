@@ -335,15 +335,18 @@ async function updateCountdowns() {
     
     // Calculate remaining time from storage (exact) instead of alarm (rounded)
     // This ensures pause/resume shows exact time (e.g., 56:16 not 57:00)
+    console.log(`[updateCountdowns] ${breakType}: enabled=${data.enabled}, status=${data.status}, lastTriggered=${data.lastTriggered}`);
     if (data.lastTriggered) {
       const intervalMs = data.interval * 60 * 1000;
       const remainingMs = (data.lastTriggered + intervalMs) - Date.now();
+      console.log(`[updateCountdowns] ${breakType}: showing countdown, remainingMs=${remainingMs}`);
       if (remainingMs > 0) {
         el.textContent = formatTimeWithUnit(remainingMs);
       } else {
         el.textContent = 'Due!';
       }
     } else {
+      console.log(`[updateCountdowns] ${breakType}: no lastTriggered, showing Ready`);
       el.textContent = 'Ready';
     }
   });

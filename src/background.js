@@ -298,8 +298,10 @@ async function toggleBreak(breakType, enabled) {
   await chrome.storage.local.set({ breaks: data.breaks });
   
   if (enabled) {
-    data.breaks[breakType].lastTriggered = Date.now();
+    const now = Date.now();
+    data.breaks[breakType].lastTriggered = now;
     await chrome.storage.local.set({ breaks: data.breaks });
+    console.log(`[toggleBreak] Enabled ${breakType}, set lastTriggered=${now}, interval=${data.breaks[breakType].interval}`);
     chrome.alarms.create(`break-${breakType}`, {
       delayInMinutes: data.breaks[breakType].interval
     });
