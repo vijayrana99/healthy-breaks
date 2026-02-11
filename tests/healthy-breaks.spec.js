@@ -183,8 +183,9 @@ test.describe('Healthy Breaks Extension - Validation', () => {
     expect(backgroundContent).toContain('pausedRemainingMs = remainingMs');
     expect(backgroundContent).toContain('pausedAt = Date.now()');
     
-    // Verify pauseBreak calculates from alarm.scheduledTime for precision
-    expect(backgroundContent).toContain('alarm.scheduledTime - Date.now()');
+    // Verify pauseBreak uses lastTriggered for consistency with popup display
+    expect(backgroundContent).toContain('lastTriggered + intervalMs');
+    expect(backgroundContent).toContain('Use lastTriggered + interval (same as popup display)');
     
     console.log('✓ Pause exact time storage validation passed');
   });

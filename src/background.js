@@ -342,11 +342,13 @@ async function pauseBreak(breakType) {
   const data = await chrome.storage.local.get('breaks');
   
   // Calculate remaining time before pausing
-  const alarm = await chrome.alarms.get(`break-${breakType}`);
+  // Use lastTriggered + interval (same as popup display) instead of alarm.scheduledTime
+  // This ensures consistency - alarm.scheduledTime can diverge due to minute rounding
   let remainingMs = data.breaks[breakType].interval * 60 * 1000; // Default to full interval
   
-  if (alarm && alarm.scheduledTime) {
-    remainingMs = Math.max(0, alarm.scheduledTime - Date.now());
+  if (data.breaks[breakType].lastTriggered) {
+    const intervalMs = data.breaks[breakType].interval * 60 * 1000;
+    remainingMs = Math.max(0, (data.breaks[breakType].lastTriggered + intervalMs) - Date.now());
   }
   
   data.breaks[breakType].status = 'paused';
