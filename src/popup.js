@@ -170,9 +170,14 @@ function createBreakCard(breakType, config, data) {
   `;
   
   // Add event listener to config panel to stop propagation (CSP compliant)
+  // Only stop propagation for non-button clicks to allow Reset/Snooze/Pause buttons to work
   const configPanel = div.querySelector('.config-panel');
   if (configPanel) {
-    configPanel.addEventListener('click', (e) => e.stopPropagation());
+    configPanel.addEventListener('click', (e) => {
+      if (!e.target.closest('button')) {
+        e.stopPropagation();
+      }
+    });
   }
   
   return div;
