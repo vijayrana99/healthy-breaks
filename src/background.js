@@ -386,7 +386,9 @@ async function resetAll() {
 async function snoozeAll(minutes) {
   const data = await chrome.storage.local.get('breaks');
   for (const breakType of Object.keys(data.breaks)) {
-    if (data.breaks[breakType].enabled && data.breaks[breakType].status === 'active') {
+    // Snooze both active and already-snoozed breaks (resets snooze timer)
+    if (data.breaks[breakType].enabled && 
+        (data.breaks[breakType].status === 'active' || data.breaks[breakType].status === 'snoozed')) {
       await snoozeBreak(breakType, minutes);
     }
   }
@@ -412,21 +414,37 @@ async function resumeBreak(breakType) {
     ? pausedRemainingMs
     : intervalMs;
 
-  // Alarm requires whole minutes - round up
-  const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+  // Check if this was a snoozed break before pausing
+  const wasSnoozed = data.breaks[breakType].snoozeUntil != null;
 
-  // Calculate elapsed time as if timer was running continuously
-  const elapsedMs = intervalMs - remainingMs;
+  if (wasSnoozed) {
+    // Restore snooze timer
+    data.breaks[breakType].status = 'snoozed';
+    data.breaks[breakType].snoozeUntil = Date.now() + remainingMs;
+    data.breaks[breakType].pausedRemainingMs = null;
+    data.breaks[breakType].pausedAt = null;
+    await chrome.storage.local.set({ breaks: data.breaks });
 
-  data.breaks[breakType].status = 'active';
-  data.breaks[breakType].lastTriggered = Date.now() - elapsedMs;
-  data.breaks[breakType].pausedRemainingMs = null; // Clear stored time
-  data.breaks[breakType].pausedAt = null; // Clear paused timestamp
-  await chrome.storage.local.set({ breaks: data.breaks });
+    // Create snooze alarm
+    const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+    chrome.alarms.create(`snooze-${breakType}`, {
+      delayInMinutes: alarmMinutes
+    });
+  } else {
+    // Normal resume to regular interval
+    const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+    const elapsedMs = intervalMs - remainingMs;
 
-  chrome.alarms.create(`break-${breakType}`, {
-    delayInMinutes: alarmMinutes
-  });
+    data.breaks[breakType].status = 'active';
+    data.breaks[breakType].lastTriggered = Date.now() - elapsedMs;
+    data.breaks[breakType].pausedRemainingMs = null;
+    data.breaks[breakType].pausedAt = null;
+    await chrome.storage.local.set({ breaks: data.breaks });
+
+    chrome.alarms.create(`break-${breakType}`, {
+      delayInMinutes: alarmMinutes
+    });
+  }
 }
 
 async function resumeAll() {
