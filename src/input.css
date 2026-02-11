@@ -1,20 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #f2f2f7;
   }
 }
 
 @layer utilities {
-  .bg-brandGreen {
+  .bg-ios-green {
     background-color: #22C55E;
   }
-  .text-brandGreen {
+  .text-ios-green {
     color: #22C55E;
+  }
+  .bg-ios-amber {
+    color: #92400e;
+  }
+  .text-ios-blue {
+    color: #3b82f6;
+  }
+  .text-ios-gray {
+    color: #4b5563;
+  }
+  .text-ios-violet {
+    color: #8b5cf6;
   }
 }

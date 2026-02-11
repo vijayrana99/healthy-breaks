@@ -4,11 +4,18 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       colors: {
-        brandGreen: '#22C55E',
-        bgGray: '#F3F4F6',
+        // iOS Colors
+        ios: {
+          bg: '#f2f2f7',
+          green: '#22C55E',
+          amber: '#92400e',
+          blue: '#3b82f6',
+          gray: '#4b5563',
+          violet: '#8b5cf6',
+        }
       },
     },
   },

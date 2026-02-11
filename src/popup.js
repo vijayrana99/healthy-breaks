@@ -1,37 +1,48 @@
 const BREAK_CONFIG = {
   eye: {
     name: 'Eye Break',
-    icon: '👁️',
+    icon: 'eye',
     defaultInterval: 20,
-    color: 'blue'
+    color: '#92400e' // amber-800
   },
   water: {
     name: 'Water Break',
-    icon: '💧',
+    icon: 'droplets',
     defaultInterval: 60,
-    color: 'cyan'
+    color: '#3b82f6' // blue-500
   },
   walk: {
     name: 'Walk Break',
-    icon: '🚶',
+    icon: 'footprints',
     defaultInterval: 60,
-    color: 'green'
+    color: '#4b5563' // gray-600
   },
   posture: {
     name: 'Posture Check',
-    icon: '🧘',
+    icon: 'activity',
     defaultInterval: 30,
-    color: 'purple'
+    color: '#8b5cf6' // violet-500
   }
 };
 
+// Lucide icon SVGs
+const ICONS = {
+  eye: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  droplets: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>`,
+  footprints: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 13 3.8 13 8c0 1.25-.38 2.2-1 3.24-.64 1.08-.95 1.75-.95 2.6V16"/><path d="M20 16v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 2 11 3.8 11 8c0 1.25.38 2.2 1 3.24.64 1.08.95 1.75.95 2.6V16"/><path d="M16 20h6"/><path d="M2 20h6"/></svg>`,
+  activity: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+  chevronDown: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+  chevronUp: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>`
+};
+
+let expandedBreakId = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
   await renderBreaksList();
-  setupGlobalControls();
-  setupMasterOverride();
   setupEventDelegation();
+  setupMasterOverride();
   
-  // Refresh every second for countdown timers
+  // Refresh breaks data every second
   setInterval(updateCountdowns, 1000);
 });
 
@@ -47,100 +58,120 @@ async function renderBreaksList() {
   
   for (const [breakType, config] of Object.entries(BREAK_CONFIG)) {
     const data = breaksData[breakType];
-    const breakRow = createBreakRow(breakType, config, data);
-    container.appendChild(breakRow);
+    const breakCard = createBreakCard(breakType, config, data);
+    container.appendChild(breakCard);
   }
 }
 
-function createBreakRow(breakType, config, data) {
+function createBreakCard(breakType, config, data) {
   const div = document.createElement('div');
-  div.className = 'bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col break-card';
+  const isExpanded = expandedBreakId === breakType;
+  
+  div.className = `bg-white rounded-2xl shadow-sm mb-4 transition-all duration-300 overflow-hidden cursor-pointer break-card ${isExpanded ? 'expanded' : ''}`;
   div.dataset.break = breakType;
   
-  // Toggle styling based on enabled state
-  const toggleChecked = data.enabled ? 'checked' : '';
-  const sliderBg = data.enabled ? 'bg-[#22C55E]' : 'bg-gray-200';
-  const dotTransform = data.enabled ? 'translate-x-6' : '';
-  
   div.innerHTML = `
-    <!-- Header Section with Icon, Title, and Toggle -->
-    <div class="break-header flex items-center justify-between cursor-pointer" data-action="toggle-config" data-break="${breakType}">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-${config.color}-50 flex items-center justify-center">
-          <span class="text-2xl">${config.icon}</span>
+    <!-- Card Header -->
+    <div class="p-2 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <div class="p-2 bg-gray-50 rounded-lg" style="color: ${config.color}">
+          ${ICONS[config.icon]}
         </div>
-        <div>
-          <h3 class="font-bold text-lg text-gray-900">${config.name}</h3>
-          <p class="text-gray-500 font-medium text-sm countdown" data-break="${breakType}">Off</p>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-bold text-gray-900">${config.name}</h3>
+          <span class="text-sm font-medium text-gray-500 countdown" data-break="${breakType}">
+            ${getInitialStatusText(data)}
+          </span>
         </div>
-      </div>
-      <label class="switch">
-        <input 
-          type="checkbox" 
-          class="break-toggle" 
-          ${toggleChecked}
-          data-break="${breakType}"
-        >
-        <div class="toggle-slider ${sliderBg}"></div>
-        <div class="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-200 shadow-sm ${dotTransform}"></div>
-      </label>
-    </div>
-    
-    <!-- Config Panel -->
-    <div id="config-${breakType}" class="config-panel mt-4 pt-4 border-t border-gray-100">
-      <div class="flex items-center gap-3 mb-4">
-        <label class="text-sm text-gray-700 font-medium">Interval (minutes)</label>
-        <input 
-          type="number" 
-          class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22C55E] focus:border-transparent interval-input"
-          value="${data.interval}"
-          min="1"
-          max="180"
-          data-break="${breakType}"
-        >
-        <button class="px-6 py-2 bg-[#22C55E] text-white font-semibold rounded-lg hover:bg-green-600 transition-colors update-interval-btn" data-break="${breakType}">Update</button>
       </div>
       
-      <div class="flex gap-3">
-        <button class="px-6 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 hover:bg-gray-50 transition-colors reset-timer-btn" data-break="${breakType}">Reset</button>
-        <button class="px-6 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 hover:bg-gray-50 transition-colors snooze-btn" data-break="${breakType}" data-minutes="5">Snooze</button>
-        <button class="px-6 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 hover:bg-gray-50 transition-colors pause-btn" data-break="${breakType}">Pause</button>
+      <div class="flex items-center space-x-3">
+        ${isExpanded ? ICONS.chevronUp : ICONS.chevronDown}
+        <input 
+          type="checkbox" 
+          class="ios-toggle break-toggle" 
+          ${data.enabled ? 'checked' : ''}
+          data-break="${breakType}"
+        >
+      </div>
+    </div>
+
+    <!-- Expandable Config Panel -->
+    <div id="config-${breakType}" class="config-panel ${isExpanded ? 'open' : ''}" onclick="event.stopPropagation()">
+      <div class="px-5 pb-5 border-t border-gray-100">
+        <div class="pt-5 space-y-4">
+          <!-- Interval Input -->
+          <div class="flex items-center justify-between">
+            <label class="text-gray-600 font-medium text-sm">Interval (minutes)</label>
+            <div class="flex items-center space-x-2">
+              <input 
+                type="number"
+                class="interval-input w-16 h-10 border border-gray-200 rounded-lg text-center font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
+                value="${data.interval}"
+                min="1"
+                max="180"
+                data-break="${breakType}"
+              >
+              <button 
+                class="update-interval-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors text-sm"
+                data-break="${breakType}"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-3 gap-3">
+            <button 
+              class="reset-timer-btn py-2.5 px-2 border border-green-600 text-green-700 font-medium rounded-lg hover:bg-green-50 transition-colors text-sm"
+              data-break="${breakType}"
+            >
+              Reset
+            </button>
+            <button 
+              class="snooze-btn py-2.5 px-2 border border-green-600 text-green-700 font-medium rounded-lg hover:bg-green-50 transition-colors text-sm"
+              data-break="${breakType}"
+              data-minutes="5"
+            >
+              Snooze
+            </button>
+            <button 
+              class="pause-btn py-2.5 px-2 border border-green-600 text-green-700 font-medium rounded-lg hover:bg-green-50 transition-colors text-sm"
+              data-break="${breakType}"
+            >
+              ${data.status === 'paused' ? 'Resume' : 'Pause'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   `;
+  
   return div;
 }
 
-function getStatusBadgeClass(status) {
-  switch (status) {
-    case 'active': return 'badge-success';
-    case 'paused': return 'badge-ghost';
-    case 'snoozed': return 'badge-warning';
-    default: return 'badge-ghost';
-  }
+function getInitialStatusText(data) {
+  if (!data.enabled) return 'Off';
+  if (data.status === 'paused') return 'Paused';
+  return 'Ready';
 }
 
-function toggleConfig(breakType) {
-  const panel = document.getElementById(`config-${breakType}`);
-  panel.classList.toggle('open');
-}
-
-// Event Delegation Setup
 function setupEventDelegation() {
   const container = document.getElementById('breaks-list');
   
   container.addEventListener('click', async (e) => {
     const target = e.target;
     
-    // Handle break header click (toggle config)
-    if (target.closest('.break-header')) {
-      const header = target.closest('.break-header');
-      const breakType = header.dataset.break;
-      toggleConfig(breakType);
+    // Handle card click (toggle expand)
+    const card = target.closest('.break-card');
+    if (card && !target.closest('.ios-toggle') && !target.closest('button') && !target.closest('input')) {
+      const breakType = card.dataset.break;
+      toggleExpand(breakType);
     }
     
     // Handle toggle checkbox
-    if (target.classList.contains('break-toggle')) {
+    if (target.classList.contains('break-toggle') || target.classList.contains('ios-toggle')) {
       const breakType = target.dataset.break;
       const enabled = target.checked;
       e.stopPropagation();
@@ -174,6 +205,11 @@ function setupEventDelegation() {
   });
 }
 
+function toggleExpand(breakType) {
+  expandedBreakId = expandedBreakId === breakType ? null : breakType;
+  renderBreaksList();
+}
+
 async function toggleBreak(breakType, enabled) {
   await chrome.runtime.sendMessage({
     action: 'toggleBreak',
@@ -184,7 +220,7 @@ async function toggleBreak(breakType, enabled) {
 }
 
 async function updateInterval(breakType) {
-  const input = document.querySelector(`input.interval-input[data-break="${breakType}"]`);
+  const input = document.querySelector(`.interval-input[data-break="${breakType}"]`);
   const interval = parseInt(input.value, 10);
   if (interval < 1 || interval > 180) {
     alert('Interval must be between 1 and 180 minutes');
@@ -224,45 +260,6 @@ async function pauseBreak(breakType) {
   await renderBreaksList();
 }
 
-function setupGlobalControls() {
-  document.getElementById('reset-all').addEventListener('click', async () => {
-    await chrome.runtime.sendMessage({ action: 'resetAll' });
-    await renderBreaksList();
-  });
-  
-  document.getElementById('snooze-all').addEventListener('click', async () => {
-    await chrome.runtime.sendMessage({ action: 'snoozeAll', minutes: 5 });
-    await renderBreaksList();
-  });
-  
-  document.getElementById('pause-all').addEventListener('click', async () => {
-    await chrome.runtime.sendMessage({ action: 'pauseAll' });
-    await renderBreaksList();
-  });
-}
-
-function setupMasterOverride() {
-  const masterInput = document.getElementById('master-interval');
-  const applyBtn = document.getElementById('apply-master');
-  
-  applyBtn.addEventListener('click', async () => {
-    const interval = parseInt(masterInput.value, 10);
-    if (!interval || interval < 1 || interval > 180) {
-      alert('Please enter a valid interval (1-180 minutes)');
-      return;
-    }
-    
-    await chrome.runtime.sendMessage({
-      action: 'setMasterInterval',
-      interval
-    });
-    
-    // Clear the input after applying
-    masterInput.value = '';
-    await renderBreaksList();
-  });
-}
-
 async function updateCountdowns() {
   const breaksData = await getBreaksData();
   const countdowns = document.querySelectorAll('.countdown');
@@ -281,10 +278,9 @@ async function updateCountdowns() {
       return;
     }
     
-    if (data.status === 'snooze-pending' && data.snoozeUntil) {
+    if (data.status === 'snoozed' && data.snoozeUntil) {
       const remaining = data.snoozeUntil - Date.now();
       if (remaining > 0) {
-        // Show countdown during snooze
         el.textContent = formatTimeWithUnit(remaining);
       } else {
         el.textContent = 'Due!';
@@ -307,7 +303,7 @@ async function updateCountdowns() {
           el.textContent = 'Due!';
         }
       } else {
-        el.textContent = 'Ready'
+        el.textContent = 'Ready';
       }
     });
   });
@@ -325,4 +321,52 @@ function formatTimeWithUnit(ms) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} Minutes`;
+}
+
+function setupMasterOverride() {
+  const masterIntervalInput = document.getElementById('master-interval');
+  const applyBtn = document.getElementById('apply-master');
+  const resetAllBtn = document.getElementById('reset-all');
+  const snoozeAllBtn = document.getElementById('snooze-all');
+  const pauseAllBtn = document.getElementById('pause-all');
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', async () => {
+      const interval = parseInt(masterIntervalInput.value, 10);
+      if (!interval || interval < 1 || interval > 180) {
+        alert('Please enter a valid interval (1-180 minutes)');
+        return;
+      }
+      
+      await chrome.runtime.sendMessage({
+        action: 'setMasterInterval',
+        interval
+      });
+      
+      // Clear the input after applying
+      masterIntervalInput.value = '';
+      await renderBreaksList();
+    });
+  }
+
+  if (resetAllBtn) {
+    resetAllBtn.addEventListener('click', async () => {
+      await chrome.runtime.sendMessage({ action: 'resetAll' });
+      await renderBreaksList();
+    });
+  }
+
+  if (snoozeAllBtn) {
+    snoozeAllBtn.addEventListener('click', async () => {
+      await chrome.runtime.sendMessage({ action: 'snoozeAll', minutes: 5 });
+      await renderBreaksList();
+    });
+  }
+
+  if (pauseAllBtn) {
+    pauseAllBtn.addEventListener('click', async () => {
+      await chrome.runtime.sendMessage({ action: 'pauseAll' });
+      await renderBreaksList();
+    });
+  }
 }

@@ -6,22 +6,82 @@
   <title>Healthy Breaks</title>
   <link href="tailwind.min.css" rel="stylesheet" type="text/css" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    /* Local Inter Font */
+    @font-face {
+      font-family: 'Inter';
+      src: url('fonts/Inter-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('fonts/Inter-Medium.ttf') format('truetype');
+      font-weight: 500;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('fonts/Inter-SemiBold.ttf') format('truetype');
+      font-weight: 600;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('fonts/Inter-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
     
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       width: 400px;
-      min-height: 500px;
-      max-height: 600px;
+      min-height: 600px;
+      background-color: #f2f2f7;
       overflow-y: auto;
-      background-color: #F8F8F8;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
-    .break-card {
-      transition: all 0.2s ease;
+    body::-webkit-scrollbar {
+      display: none;
     }
-    .break-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* iOS Toggle Switch */
+    .ios-toggle {
+      appearance: none;
+      width: 56px;
+      height: 32px;
+      background-color: #d1d5db;
+      border-radius: 32px;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.35s cubic-bezier(0.4, 0.0, 0.2, 1);
     }
+    .ios-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 28px;
+      height: 28px;
+      background-color: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1), box-shadow 0.35s ease;
+    }
+    .ios-toggle:checked {
+      background-color: #22C55E;
+    }
+    .ios-toggle:checked::after {
+      transform: translateX(24px);
+    }
+    .ios-toggle:active::after {
+      transform: scale(0.95);
+    }
+    .ios-toggle:checked:active::after {
+      transform: translateX(24px) scale(0.95);
+    }
+
+    /* Card expand animation */
     .config-panel {
       max-height: 0;
       overflow: hidden;
@@ -29,119 +89,122 @@
       opacity: 0;
     }
     .config-panel.open {
-      max-height: 250px;
+      max-height: 300px;
       opacity: 1;
     }
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 56px;
-      height: 32px;
+
+    /* Card ring highlight */
+    .break-card {
+      transition: all 0.2s ease;
     }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
+    .break-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
-    .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #E5E7EB;
-      transition: .3s;
-      border-radius: 32px;
-    }
-    .toggle-slider:before {
-      position: absolute;
-      content: "";
-      height: 24px;
-      width: 24px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .3s;
-      border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    input:checked + .toggle-slider {
-      background-color: #22C55E;
-    }
-    input:checked + .toggle-slider:before {
-      transform: translateX(24px);
+    .break-card.expanded {
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
-<body class="text-gray-800">
-  <main class="w-full max-w-[550px] mx-auto py-6 px-4">
-    
-    <div class="mb-6">
-      <div class="flex items-center gap-4 mb-5">
-        <div class="w-14 h-14 bg-[#22C55E] rounded-xl flex items-center justify-center shadow-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7 11v 8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -2 2h-7a3 3 0 0 1 -3 -3"></path>
-          </svg>
+<body class="text-gray-900">
+  <div class="min-h-screen flex flex-col">
+    <!-- Main Header -->
+    <div class="px-6 pt-4 pb-4 flex items-center space-x-3">
+      <div class="bg-green-500 p-2 rounded-xl shadow-sm flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" class="text-white">
+          <path d="M7 10v12"/>
+          <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
+        </svg>
+      </div>
+      <div class="py-2">
+        <h1 class="text-lg font-bold text-gray-900 tracking-tight">Healthy Breaks</h1>
+        <p class="text-base text-gray-400 font-medium">Stay healthy while you work</p>
+      </div>
+    </div>
+
+    <!-- Break List -->
+    <div id="breaks-list" class="px-4 flex-1">
+      <!-- Break cards will be injected here -->
+    </div>
+
+    <!-- Master Override Section -->
+    <div class="px-4 mt-6 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-100">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold text-gray-900">Master Override</h2>
+              <p class="text-sm text-gray-500 font-medium mt-0.5">Set all intervals</p>
+            </div>
+            <div class="p-2 bg-gray-50 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+          </div>
         </div>
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Healthy Breaks</h1>
-          <p class="text-gray-500 font-medium text-sm">Stay healthy while you work</p>
+
+        <!-- Interval Input Row -->
+        <div class="px-4 border-b border-gray-100" style="padding-top: 0px; padding-bottom: 0px;">
+          <div class="flex items-center gap-3">
+            <input 
+              type="number" 
+              id="master-interval" 
+              placeholder="Minutes" 
+              min="1" 
+              max="180"
+              class="flex-1 h-10 border border-gray-200 rounded-lg text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              style="padding-left: 10px;"
+            >
+            <button 
+              id="apply-master"
+              class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons Grid -->
+        <div class="p-4">
+          <div class="grid grid-cols-3 gap-3">
+            <button 
+              id="reset-all"
+              class="flex items-center justify-center gap-2 px-3 py-2 border border-green-600 text-green-700 font-semibold rounded-lg hover:bg-green-50 transition-colors text-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              <span>Reset</span>
+            </button>
+            <button 
+              id="snooze-all"
+              class="flex items-center justify-center gap-2 px-3 py-2 border border-green-600 text-green-700 font-semibold rounded-lg hover:bg-green-50 transition-colors text-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>Snooze</span>
+            </button>
+            <button 
+              id="pause-all"
+              class="flex items-center justify-center gap-2 px-3 py-2 border border-green-600 text-green-700 font-semibold rounded-lg hover:bg-green-50 transition-colors text-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16"/>
+                <rect x="14" y="4" width="4" height="16"/>
+              </svg>
+              <span>Pause</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div class="w-full h-px bg-gray-200"></div>
     </div>
 
-    <div id="breaks-list" class="space-y-4">
-    </div>
-
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mt-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-lg text-gray-900">Master Override</h3>
-        <span class="text-sm text-gray-500 font-medium">Set all intervals</span>
-      </div>
-
-      <div class="flex gap-3 mb-6">
-        <input type="number" id="master-interval" placeholder="Minutes" min="1" max="180" 
-          class="flex-grow border border-gray-200 bg-white rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" />
-        <button id="apply-master" class="bg-[#22C55E] hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-xl transition-colors duration-200 shadow-sm">
-          Apply
-        </button>
-      </div>
-
-      <div class="grid grid-cols-3 gap-3">
-        <button id="reset-all" class="flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-gray-800 font-semibold hover:bg-gray-50 transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-            <path d="M3 3v5h5"></path>
-          </svg>
-          Reset
-        </button>
-        <button id="snooze-all" class="flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-gray-800 font-semibold hover:bg-gray-50 transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          Snooze
-        </button>
-        <button id="pause-all" class="flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-gray-800 font-semibold hover:bg-gray-50 transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="6" y="4" width="4" height="16"></rect>
-            <rect x="14" y="4" width="4" height="16"></rect>
-          </svg>
-          Pause
-        </button>
-      </div>
-    </div>
-
-    <div class="mt-8 flex justify-center items-center gap-2 text-gray-500 text-sm font-medium">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-500">
-        <path d="M12 2a5 5 0 0 0 -5 5v3a3 3 0 0 0 -3 3v6a3 3 0 0 0 3 3h10a3 3 0 0 0 3 -3v-6a3 3 0 0 0 -3 -3v-3a5 5 0 0 0 -5 -5zm0 2a3 3 0 0 1 3 3v3h-6v-3a3 3 0 0 1 3 -3z"/>
-      </svg>
-      <span>No data leaves your device</span>
-    </div>
-
-  </main>
+  </div>
 
   <script src="popup.js"></script>
 </body>
