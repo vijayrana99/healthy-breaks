@@ -252,6 +252,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           await pauseBreak(request.breakType);
           sendResponse({ success: true });
           break;
+        case 'resumeBreak':
+          await resumeBreak(request.breakType);
+          sendResponse({ success: true });
+          break;
         case 'resetAll':
           await resetAll();
           sendResponse({ success: true });
@@ -336,8 +340,19 @@ async function resetTimer(breakType) {
 
 async function pauseBreak(breakType) {
   const data = await chrome.storage.local.get('breaks');
+  
+  // Calculate remaining time before pausing
+  const alarm = await chrome.alarms.get(`break-${breakType}`);
+  let remainingMs = data.breaks[breakType].interval * 60 * 1000; // Default to full interval
+  
+  if (alarm && alarm.scheduledTime) {
+    remainingMs = Math.max(0, alarm.scheduledTime - Date.now());
+  }
+  
   data.breaks[breakType].status = 'paused';
   data.breaks[breakType].waitingSince = null;
+  data.breaks[breakType].pausedRemainingMs = remainingMs; // Store remaining time
+  data.breaks[breakType].pausedAt = Date.now(); // Store when paused
   await chrome.storage.local.set({ breaks: data.breaks });
   
   chrome.alarms.clear(`break-${breakType}`);
@@ -375,12 +390,18 @@ async function resumeBreak(breakType) {
   const data = await chrome.storage.local.get('breaks');
   if (!data.breaks[breakType].enabled || data.breaks[breakType].status !== 'paused') return;
   
+  // Get stored remaining time or default to full interval
+  const remainingMs = data.breaks[breakType].pausedRemainingMs || (data.breaks[breakType].interval * 60 * 1000);
+  const remainingMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000))); // At least 1 minute
+  
   data.breaks[breakType].status = 'active';
   data.breaks[breakType].lastTriggered = Date.now();
+  data.breaks[breakType].pausedRemainingMs = null; // Clear stored time
+  data.breaks[breakType].pausedAt = null; // Clear paused timestamp
   await chrome.storage.local.set({ breaks: data.breaks });
   
   chrome.alarms.create(`break-${breakType}`, {
-    delayInMinutes: data.breaks[breakType].interval
+    delayInMinutes: remainingMinutes
   });
 }
 

@@ -276,10 +276,22 @@ async function snoozeBreak(breakType, minutes) {
 }
 
 async function pauseBreak(breakType) {
-  await chrome.runtime.sendMessage({
-    action: 'pauseBreak',
-    breakType
-  });
+  const breaksData = await getBreaksData();
+  const breakData = breaksData[breakType];
+  
+  if (breakData.status === 'paused') {
+    // Resume
+    await chrome.runtime.sendMessage({
+      action: 'resumeBreak',
+      breakType
+    });
+  } else {
+    // Pause
+    await chrome.runtime.sendMessage({
+      action: 'pauseBreak',
+      breakType
+    });
+  }
   await renderBreaksList();
 }
 
@@ -297,7 +309,12 @@ async function updateCountdowns() {
     }
     
     if (data.status === 'paused') {
-      el.textContent = 'Paused';
+      // Show stored remaining time if available
+      if (data.pausedRemainingMs && data.pausedRemainingMs > 0) {
+        el.textContent = formatTimeWithUnit(data.pausedRemainingMs) + ' (Paused)';
+      } else {
+        el.textContent = 'Paused';
+      }
       return;
     }
     
