@@ -153,4 +153,67 @@ test.describe('Healthy Breaks Extension - Validation', () => {
     
     console.log('✓ Eye Break alarm validation passed');
   });
+
+  test('should calculate remaining time from lastTriggered not alarm', async () => {
+    const popupPath = path.join(__dirname, '..', 'src', 'popup.js');
+    const popupContent = fs.readFileSync(popupPath, 'utf8');
+    
+    // Verify popup calculates remaining time from lastTriggered (exact) not alarm (rounded)
+    expect(popupContent).toContain('data.lastTriggered');
+    expect(popupContent).toContain('intervalMs = data.interval * 60 * 1000');
+    expect(popupContent).toContain('data.lastTriggered + intervalMs');
+    expect(popupContent).toContain('Calculate remaining time from storage (exact) instead of alarm (rounded)');
+    
+    // Verify it does NOT use alarm.scheduledTime for active breaks anymore
+    const activeBreakSection = popupContent.substring(
+      popupContent.indexOf('// Calculate remaining time from storage'),
+      popupContent.indexOf('} else {', popupContent.indexOf('// Calculate remaining time from storage')) + 20
+    );
+    expect(activeBreakSection).toContain('lastTriggered');
+    expect(activeBreakSection).not.toContain('alarm.scheduledTime');
+    
+    console.log('✓ lastTriggered calculation validation passed');
+  });
+
+  test('should validate pause functionality stores exact remaining time', async () => {
+    const backgroundPath = path.join(__dirname, '..', 'src', 'background.js');
+    const backgroundContent = fs.readFileSync(backgroundPath, 'utf8');
+    
+    // Verify pauseBreak stores exact remaining milliseconds
+    expect(backgroundContent).toContain('pausedRemainingMs = remainingMs');
+    expect(backgroundContent).toContain('pausedAt = Date.now()');
+    
+    // Verify pauseBreak calculates from alarm.scheduledTime for precision
+    expect(backgroundContent).toContain('alarm.scheduledTime - Date.now()');
+    
+    console.log('✓ Pause exact time storage validation passed');
+  });
+
+  test('should validate resume functionality restores exact time', async () => {
+    const backgroundPath = path.join(__dirname, '..', 'src', 'background.js');
+    const backgroundContent = fs.readFileSync(backgroundPath, 'utf8');
+    
+    // Verify resumeBreak uses pausedRemainingMs for hard pause
+    expect(backgroundContent).toContain('pausedRemainingMs');
+    expect(backgroundContent).toContain('const remainingMs = (typeof pausedRemainingMs === \'number\' && pausedRemainingMs > 0)');
+    
+    // Verify resumeBreak sets lastTriggered correctly for exact time display
+    expect(backgroundContent).toContain('Date.now() - elapsedMs');
+    
+    console.log('✓ Resume exact time restoration validation passed');
+  });
+
+  test('should validate formatTimeWithUnit uses Math.floor for accuracy', async () => {
+    const popupPath = path.join(__dirname, '..', 'src', 'popup.js');
+    const popupContent = fs.readFileSync(popupPath, 'utf8');
+    
+    // Verify formatTimeWithUnit uses Math.floor (not Math.ceil) for precise display
+    const formatFunction = popupContent.substring(
+      popupContent.indexOf('function formatTimeWithUnit(ms)'),
+      popupContent.indexOf('}', popupContent.indexOf('function formatTimeWithUnit(ms)')) + 1
+    );
+    expect(formatFunction).toContain('Math.floor(ms / 1000)');
+    
+    console.log('✓ formatTimeWithUnit accuracy validation passed');
+  });
 });

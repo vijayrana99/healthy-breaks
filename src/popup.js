@@ -333,19 +333,19 @@ async function updateCountdowns() {
       return;
     }
     
-    // Get alarm info for active breaks
-    chrome.alarms.get(`break-${breakType}`, alarm => {
-      if (alarm && alarm.scheduledTime) {
-        const remaining = alarm.scheduledTime - Date.now();
-        if (remaining > 0) {
-          el.textContent = formatTimeWithUnit(remaining);
-        } else {
-          el.textContent = 'Due!';
-        }
+    // Calculate remaining time from storage (exact) instead of alarm (rounded)
+    // This ensures pause/resume shows exact time (e.g., 56:16 not 57:00)
+    if (data.lastTriggered) {
+      const intervalMs = data.interval * 60 * 1000;
+      const remainingMs = (data.lastTriggered + intervalMs) - Date.now();
+      if (remainingMs > 0) {
+        el.textContent = formatTimeWithUnit(remainingMs);
       } else {
-        el.textContent = 'Ready';
+        el.textContent = 'Due!';
       }
-    });
+    } else {
+      el.textContent = 'Ready';
+    }
   });
 }
 
