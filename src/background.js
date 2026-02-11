@@ -403,14 +403,8 @@ async function resumeBreak(breakType) {
   // Calculate elapsed time as if timer was running continuously
   const elapsedMs = intervalMs - remainingMs;
 
-  // COMPENSATION: Adjust lastTriggered for alarm minute precision
-  // Example: remainingMs=47:38 (2,858,000ms), alarmMinutes=48 (2,880,000ms)
-  // We set lastTriggered 22 seconds earlier so display shows accurate 47:38
-  const alarmMs = alarmMinutes * 60 * 1000;
-  const compensationMs = alarmMs - remainingMs;
-
   data.breaks[breakType].status = 'active';
-  data.breaks[breakType].lastTriggered = Date.now() - elapsedMs - compensationMs;
+  data.breaks[breakType].lastTriggered = Date.now() - elapsedMs;
   data.breaks[breakType].pausedRemainingMs = null; // Clear stored time
   data.breaks[breakType].pausedAt = null; // Clear paused timestamp
   await chrome.storage.local.set({ breaks: data.breaks });
