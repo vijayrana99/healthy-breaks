@@ -390,21 +390,33 @@ async function resumeBreak(breakType) {
   const data = await chrome.storage.local.get('breaks');
   if (!data.breaks[breakType].enabled || data.breaks[breakType].status !== 'paused') return;
   
-  // Get stored remaining time or default to full interval
-  const pausedMs = data.breaks[breakType].pausedRemainingMs;
-  const remainingMs = (typeof pausedMs === 'number' && pausedMs > 0) 
-    ? pausedMs 
-    : (data.breaks[breakType].interval * 60 * 1000);
-  const remainingMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000))); // At least 1 minute
-  
+  // Hard pause: resume from exact paused point, completely frozen (ignore elapsed pause time)
+  const pausedRemainingMs = data.breaks[breakType].pausedRemainingMs;
+  const intervalMs = data.breaks[breakType].interval * 60 * 1000;
+  const remainingMs = (typeof pausedRemainingMs === 'number' && pausedRemainingMs > 0)
+    ? pausedRemainingMs
+    : intervalMs;
+
+  // Alarm requires whole minutes - round up
+  const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+
+  // Calculate elapsed time as if timer was running continuously
+  const elapsedMs = intervalMs - remainingMs;
+
+  // COMPENSATION: Adjust lastTriggered for alarm minute precision
+  // Example: remainingMs=47:38 (2,858,000ms), alarmMinutes=48 (2,880,000ms)
+  // We set lastTriggered 22 seconds earlier so display shows accurate 47:38
+  const alarmMs = alarmMinutes * 60 * 1000;
+  const compensationMs = alarmMs - remainingMs;
+
   data.breaks[breakType].status = 'active';
-  data.breaks[breakType].lastTriggered = Date.now();
+  data.breaks[breakType].lastTriggered = Date.now() - elapsedMs - compensationMs;
   data.breaks[breakType].pausedRemainingMs = null; // Clear stored time
   data.breaks[breakType].pausedAt = null; // Clear paused timestamp
   await chrome.storage.local.set({ breaks: data.breaks });
-  
+
   chrome.alarms.create(`break-${breakType}`, {
-    delayInMinutes: remainingMinutes
+    delayInMinutes: alarmMinutes
   });
 }
 
