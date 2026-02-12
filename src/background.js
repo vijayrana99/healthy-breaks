@@ -106,13 +106,11 @@ async function handleBreakTrigger(breakType) {
       ]
     }, (createdId) => {
       if (chrome.runtime.lastError) {
-        console.error('Notification error:', chrome.runtime.lastError);
-      } else {
-        console.log(`Notification created for ${breakType}: ${createdId}`);
+        // Notification error occurred
       }
     });
   } catch (error) {
-    console.error('Failed to create notification:', error);
+    // Failed to create notification
   }
 }
 
@@ -166,17 +164,21 @@ chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
 });
 
 async function snoozeBreak(breakType, minutes) {
-  const data = await chrome.storage.local.get('breaks');
-  data.breaks[breakType].snoozeUntil = Date.now() + (minutes * 60 * 1000);
-  data.breaks[breakType].status = 'snoozed';
-  data.breaks[breakType].waitingSince = null;
-  await chrome.storage.local.set({ breaks: data.breaks });
-  
-  // Clear existing alarm and create snooze alarm
-  chrome.alarms.clear(`break-${breakType}`);
-  chrome.alarms.create(`snooze-${breakType}`, {
-    delayInMinutes: minutes
-  });
+  try {
+    const data = await chrome.storage.local.get('breaks');
+    data.breaks[breakType].snoozeUntil = Date.now() + (minutes * 60 * 1000);
+    data.breaks[breakType].status = 'snoozed';
+    data.breaks[breakType].waitingSince = null;
+    await chrome.storage.local.set({ breaks: data.breaks });
+
+    // Clear existing alarm and create snooze alarm
+    chrome.alarms.clear(`break-${breakType}`);
+    chrome.alarms.create(`snooze-${breakType}`, {
+      delayInMinutes: minutes
+    });
+  } catch (error) {
+    // Error handling for snooze operation
+  }
 }
 
 // Restore alarms when service worker starts (browser restart)
@@ -298,10 +300,8 @@ async function toggleBreak(breakType, enabled) {
   await chrome.storage.local.set({ breaks: data.breaks });
   
   if (enabled) {
-    const now = Date.now();
-    data.breaks[breakType].lastTriggered = now;
+    data.breaks[breakType].lastTriggered = Date.now();
     await chrome.storage.local.set({ breaks: data.breaks });
-    console.log(`[toggleBreak] Enabled ${breakType}, set lastTriggered=${now}, interval=${data.breaks[breakType].interval}`);
     chrome.alarms.create(`break-${breakType}`, {
       delayInMinutes: data.breaks[breakType].interval
     });
@@ -312,18 +312,22 @@ async function toggleBreak(breakType, enabled) {
 }
 
 async function updateInterval(breakType, interval) {
-  const data = await chrome.storage.local.get('breaks');
-  data.breaks[breakType].interval = interval;
-  // Reset timer to start from full new interval (regardless of current state)
-  data.breaks[breakType].lastTriggered = Date.now();
-  await chrome.storage.local.set({ breaks: data.breaks });
+  try {
+    const data = await chrome.storage.local.get('breaks');
+    data.breaks[breakType].interval = interval;
+    // Reset timer to start from full new interval (regardless of current state)
+    data.breaks[breakType].lastTriggered = Date.now();
+    await chrome.storage.local.set({ breaks: data.breaks });
 
-  // Restart alarm with new interval if active
-  if (data.breaks[breakType].enabled && data.breaks[breakType].status === 'active') {
-    chrome.alarms.clear(`break-${breakType}`);
-    chrome.alarms.create(`break-${breakType}`, {
-      delayInMinutes: interval
-    });
+    // Restart alarm with new interval if active
+    if (data.breaks[breakType].enabled && data.breaks[breakType].status === 'active') {
+      chrome.alarms.clear(`break-${breakType}`);
+      chrome.alarms.create(`break-${breakType}`, {
+        delayInMinutes: interval
+      });
+    }
+  } catch (error) {
+    // Error handling for update interval operation
   }
 }
 
@@ -345,33 +349,37 @@ async function resetTimer(breakType) {
 }
 
 async function pauseBreak(breakType) {
-  const data = await chrome.storage.local.get('breaks');
-  
-  // Calculate remaining time before pausing
-  // Use lastTriggered + interval (same as popup display) instead of alarm.scheduledTime
-  // This ensures consistency - alarm.scheduledTime can diverge due to minute rounding
-  let remainingMs;
-  
-  if (data.breaks[breakType].status === 'snoozed' && data.breaks[breakType].snoozeUntil) {
-    // Snoozed: calculate from snoozeUntil (e.g., 5:00 snooze timer)
-    remainingMs = Math.max(0, data.breaks[breakType].snoozeUntil - Date.now());
-  } else {
-    // Normal: calculate from lastTriggered + interval
-    remainingMs = data.breaks[breakType].interval * 60 * 1000; // Default to full interval
-    if (data.breaks[breakType].lastTriggered) {
-      const intervalMs = data.breaks[breakType].interval * 60 * 1000;
-      remainingMs = Math.max(0, (data.breaks[breakType].lastTriggered + intervalMs) - Date.now());
+  try {
+    const data = await chrome.storage.local.get('breaks');
+
+    // Calculate remaining time before pausing
+    // Use lastTriggered + interval (same as popup display) instead of alarm.scheduledTime
+    // This ensures consistency - alarm.scheduledTime can diverge due to minute rounding
+    let remainingMs;
+
+    if (data.breaks[breakType].status === 'snoozed' && data.breaks[breakType].snoozeUntil) {
+      // Snoozed: calculate from snoozeUntil (e.g., 5:00 snooze timer)
+      remainingMs = Math.max(0, data.breaks[breakType].snoozeUntil - Date.now());
+    } else {
+      // Normal: calculate from lastTriggered + interval
+      remainingMs = data.breaks[breakType].interval * 60 * 1000; // Default to full interval
+      if (data.breaks[breakType].lastTriggered) {
+        const intervalMs = data.breaks[breakType].interval * 60 * 1000;
+        remainingMs = Math.max(0, (data.breaks[breakType].lastTriggered + intervalMs) - Date.now());
+      }
     }
+
+    data.breaks[breakType].status = 'paused';
+    data.breaks[breakType].waitingSince = null;
+    data.breaks[breakType].pausedRemainingMs = remainingMs; // Store remaining time
+    data.breaks[breakType].pausedAt = Date.now(); // Store when paused
+    await chrome.storage.local.set({ breaks: data.breaks });
+
+    chrome.alarms.clear(`break-${breakType}`);
+    chrome.alarms.clear(`snooze-${breakType}`);
+  } catch (error) {
+    // Error handling for pause operation
   }
-  
-  data.breaks[breakType].status = 'paused';
-  data.breaks[breakType].waitingSince = null;
-  data.breaks[breakType].pausedRemainingMs = remainingMs; // Store remaining time
-  data.breaks[breakType].pausedAt = Date.now(); // Store when paused
-  await chrome.storage.local.set({ breaks: data.breaks });
-  
-  chrome.alarms.clear(`break-${breakType}`);
-  chrome.alarms.clear(`snooze-${breakType}`);
 }
 
 async function resetAll() {
@@ -404,46 +412,50 @@ async function pauseAll() {
 }
 
 async function resumeBreak(breakType) {
-  const data = await chrome.storage.local.get('breaks');
-  if (!data.breaks[breakType].enabled || data.breaks[breakType].status !== 'paused') return;
-  
-  // Hard pause: resume from exact paused point, completely frozen (ignore elapsed pause time)
-  const pausedRemainingMs = data.breaks[breakType].pausedRemainingMs;
-  const intervalMs = data.breaks[breakType].interval * 60 * 1000;
-  const remainingMs = (typeof pausedRemainingMs === 'number' && pausedRemainingMs > 0)
-    ? pausedRemainingMs
-    : intervalMs;
+  try {
+    const data = await chrome.storage.local.get('breaks');
+    if (!data.breaks[breakType].enabled || data.breaks[breakType].status !== 'paused') return;
 
-  // Check if this was a snoozed break before pausing
-  const wasSnoozed = data.breaks[breakType].snoozeUntil != null;
+    // Hard pause: resume from exact paused point, completely frozen (ignore elapsed pause time)
+    const pausedRemainingMs = data.breaks[breakType].pausedRemainingMs;
+    const intervalMs = data.breaks[breakType].interval * 60 * 1000;
+    const remainingMs = (typeof pausedRemainingMs === 'number' && pausedRemainingMs > 0)
+      ? pausedRemainingMs
+      : intervalMs;
 
-  if (wasSnoozed) {
-    // Restore snooze timer
-    data.breaks[breakType].status = 'snoozed';
-    data.breaks[breakType].snoozeUntil = Date.now() + remainingMs;
-    data.breaks[breakType].pausedRemainingMs = null;
-    data.breaks[breakType].pausedAt = null;
-    await chrome.storage.local.set({ breaks: data.breaks });
+    // Check if this was a snoozed break before pausing
+    const wasSnoozed = data.breaks[breakType].snoozeUntil != null;
 
-    // Create snooze alarm
-    const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
-    chrome.alarms.create(`snooze-${breakType}`, {
-      delayInMinutes: alarmMinutes
-    });
-  } else {
-    // Normal resume to regular interval
-    const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
-    const elapsedMs = intervalMs - remainingMs;
+    if (wasSnoozed) {
+      // Restore snooze timer
+      data.breaks[breakType].status = 'snoozed';
+      data.breaks[breakType].snoozeUntil = Date.now() + remainingMs;
+      data.breaks[breakType].pausedRemainingMs = null;
+      data.breaks[breakType].pausedAt = null;
+      await chrome.storage.local.set({ breaks: data.breaks });
 
-    data.breaks[breakType].status = 'active';
-    data.breaks[breakType].lastTriggered = Date.now() - elapsedMs;
-    data.breaks[breakType].pausedRemainingMs = null;
-    data.breaks[breakType].pausedAt = null;
-    await chrome.storage.local.set({ breaks: data.breaks });
+      // Create snooze alarm
+      const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+      chrome.alarms.create(`snooze-${breakType}`, {
+        delayInMinutes: alarmMinutes
+      });
+    } else {
+      // Normal resume to regular interval
+      const alarmMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+      const elapsedMs = intervalMs - remainingMs;
 
-    chrome.alarms.create(`break-${breakType}`, {
-      delayInMinutes: alarmMinutes
-    });
+      data.breaks[breakType].status = 'active';
+      data.breaks[breakType].lastTriggered = Date.now() - elapsedMs;
+      data.breaks[breakType].pausedRemainingMs = null;
+      data.breaks[breakType].pausedAt = null;
+      await chrome.storage.local.set({ breaks: data.breaks });
+
+      chrome.alarms.create(`break-${breakType}`, {
+        delayInMinutes: alarmMinutes
+      });
+    }
+  } catch (error) {
+    // Error handling for resume operation
   }
 }
 
