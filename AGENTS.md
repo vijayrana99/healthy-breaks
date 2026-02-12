@@ -12,7 +12,8 @@
 - Local Inter font (4 weights: 400, 500, 600, 700)
 - Lucide SVG icons (no emojis)
 - Hidden scrollbar with functional scrolling
-- Master Override for global break controls
+- Master Controls for global break actions
+- Production build system (~800KB package)
 
 ---
 
@@ -105,9 +106,12 @@
     },
     water: { /* same */ },
     walk: { /* same */ },
-    posture: { /* same */ }
+    posture: { /* same */ },
+    hand: { /* same */ },
+    mental: { /* same */ },
+    breathing: { /* same */ }
   },
-  masterInterval: number | null  // Global override value
+}
 }
 ```
 
@@ -150,6 +154,33 @@ npm run test:debug         # Debug mode
 3. Close Chrome completely
 4. Reopen Chrome
 5. **Verify:** Extension should restore alarm and re-show notification
+
+---
+
+### 5. Production Build
+
+**Create minimal production package:**
+
+```bash
+./build.sh
+```
+
+**What it does:**
+- Creates `dist/` folder with only essential files
+- Excludes: node_modules/, tests/, docs/, config files
+- Size: ~1.8MB (vs 43MB development)
+
+**To package for Chrome Web Store:**
+```bash
+cd dist && zip -r ../healthy-breaks.zip .
+```
+
+**Production package includes:**
+- manifest.json
+- src/ (popup.html, popup.js, background.js, tailwind.min.css)
+- src/icons/ (all sizes)
+- src/fonts/ (Inter family)
+- README.md
 
 ---
 
@@ -341,6 +372,9 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   - Water: `#3b82f6` (blue-500)
   - Walk: `#4b5563` (gray-600)
   - Posture: `#8b5cf6` (violet-500)
+  - Hand & Wrist: `#f97316` (orange-500)
+  - Mental Reset: `#06b6d4` (cyan-500)
+  - Deep Breathing: `#10b981` (emerald-500)
 
 **Card Styling:**
 - White background with subtle shadow
@@ -480,7 +514,7 @@ If scrollbar appears:
 
 Before committing changes, verify:
 
-- [ ] All 6 Playwright tests pass (`npm test`)
+- [ ] All 10 Playwright tests pass (`npm test`)
 - [ ] Can enable/disable breaks
 - [ ] Timer counts down correctly
 - [ ] Notification appears when timer reaches 0
@@ -533,7 +567,10 @@ healthy-breaks/
 │       ├── icon48.png
 │       └── icon128.png
 ├── tests/
-│   └── healthy-breaks.spec.js # E2E tests (6 tests)
+│   └── healthy-breaks.spec.js # E2E tests (10 tests)
+├── build.sh                  # Production build script
+├── .gitignore                # Excludes dev files
+├── dist/                     # Production build output
 ├── docs/
 │   └── plans/
 │       └── 2025-02-07-healthy-breaks-implementation.md (COMPLETED)
