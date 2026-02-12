@@ -1,4 +1,28 @@
+# Development dependencies
 node_modules/
-playwright-report/
+package.json
+package-lock.json
+
+# Testing files
+tests/
 test-results/
-.git/
+playwright-report/
+playwright.config.js
+
+# Build tools
+tailwind.config.js
+
+# Documentation (not needed for extension)
+docs/
+AGENTS.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
