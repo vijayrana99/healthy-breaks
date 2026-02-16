@@ -19,7 +19,7 @@ A privacy-first Chrome extension for health reminders with a modern iOS-style de
 - **Hidden Scrollbar**: Clean look while maintaining scroll functionality
 - **Local Inter Font**: Professional typography, no external dependencies
 - **Lucide Icons**: Beautiful SVG icons for all break types
-- **Master Controls**: Control all breaks at once (Reset All, Snooze All, Pause All)
+- **Master Controls**: Control all breaks at once (Reset All, Snooze All, and Pause All)
 
 ## Installation
 
@@ -37,7 +37,7 @@ Coming soon!
 
 ## Usage
 
-1. Click the extension icon in Chrome toolbar
+1. Click the extension icon in the Chrome toolbar
 2. Enable the breaks you want by toggling the iOS-style switches
 3. Click on a break card to expand and configure:
    - Set custom interval (in minutes)
@@ -149,7 +149,7 @@ cd dist && zip -r ../healthy-breaks.zip .
 
 ### Design System
 
-**Colors:**
+**Colours:**
 - Background: `#f2f2f7` (iOS system gray)
 - Card Background: `#FFFFFF` (white)
 - Brand Green: `#22C55E`
