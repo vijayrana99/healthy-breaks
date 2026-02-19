@@ -107,7 +107,9 @@ function createBreakCard(breakType, config, data) {
       </div>
       
       <div class="flex items-center space-x-3">
-        ${isExpanded ? ICONS.chevronUp : ICONS.chevronDown}
+        <span class="expand-trigger cursor-pointer text-gray-400">
+          ${isExpanded ? ICONS.chevronUp : ICONS.chevronDown}
+        </span>
         <input 
           type="checkbox" 
           class="ios-toggle break-toggle" 

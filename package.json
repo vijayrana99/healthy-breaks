@@ -1,6 +1,6 @@
 {
   "name": "healthy-breaks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Privacy-first health reminders Chrome extension",
   "main": "index.js",
   "directories": {

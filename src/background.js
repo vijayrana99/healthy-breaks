@@ -129,22 +129,27 @@ async function handleSnoozeEnd(breakType) {
   await handleBreakTrigger(breakType);
 }
 
+// Track which breaks are being snoozed to prevent race condition with onClosed
+const snoozeInProgress = new Set();
+
 // Handle notification button clicks
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
   // Extract break type from notification ID (format: notification-{breakType}-{timestamp})
   const match = notificationId.match(/notification-(\w+)-\d+/);
   if (!match) return;
-  
+
   const breakType = match[1];
-  
+
   if (buttonIndex === 0) {
     // Done - dismiss notification and reset timer
     chrome.notifications.clear(notificationId);
     await resetTimer(breakType);
   } else if (buttonIndex === 1) {
     // Snooze 5m - snooze this specific break
+    snoozeInProgress.add(breakType);
     chrome.notifications.clear(notificationId);
     await snoozeBreak(breakType, 5);
+    snoozeInProgress.delete(breakType);
   }
 });
 
@@ -153,10 +158,16 @@ chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
   // Extract break type from notification ID (format: notification-{breakType}-{timestamp})
   const match = notificationId.match(/notification-(\w+)-\d+/);
   if (!match) return;
-  
+
   const breakType = match[1];
+
+  // Don't reset if snooze is in progress (prevents race condition)
+  if (snoozeInProgress.has(breakType)) {
+    return;
+  }
+
   const data = await chrome.storage.local.get('breaks');
-  
+
   // If closed by user and still in waiting state, reset the timer
   if (byUser && data.breaks[breakType].status === 'waiting') {
     await resetTimer(breakType);

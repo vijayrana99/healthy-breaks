@@ -8,6 +8,9 @@ A privacy-first Chrome extension for health reminders with a modern iOS-style de
 - **Water Break**: Stay hydrated with hourly reminders
 - **Walk Break**: Walk and stretch every hour
 - **Posture Check**: Maintain good posture with 30-minute checks
+- **Hand & Wrist Break**: Prevent RSI with regular hand exercises
+- **Mental Reset**: Take mindful breaks for mental clarity
+- **Deep Breathing**: Practice breathing exercises for relaxation
 
 ## Design Highlights
 
@@ -16,7 +19,7 @@ A privacy-first Chrome extension for health reminders with a modern iOS-style de
 - **Hidden Scrollbar**: Clean look while maintaining scroll functionality
 - **Local Inter Font**: Professional typography, no external dependencies
 - **Lucide Icons**: Beautiful SVG icons for all break types
-- **Master Override**: Control all breaks at once with global settings
+- **Master Controls**: Control all breaks at once (Reset All, Snooze All, Pause All)
 
 ## Installation
 
@@ -39,9 +42,10 @@ Coming soon!
 3. Click on a break card to expand and configure:
    - Set custom interval (in minutes)
    - Reset, snooze, or pause individual breaks
-4. Use Master Override at the bottom for global controls:
-   - Set all intervals at once
-   - Reset All, Snooze All, or Pause All breaks
+4. Use Master Controls at the bottom for global actions:
+   - Reset All: Restart all enabled breaks
+   - Snooze All: Pause all breaks for 5 minutes
+   - Pause All: Pause or resume all breaks
 
 ## Privacy
 
@@ -92,11 +96,13 @@ npm run test:debug    # Debug mode
 │       ├── icon48.png
 │       └── icon128.png
 ├── tests/
-│   └── healthy-breaks.spec.js # E2E validation tests
+│   └── healthy-breaks.spec.js # E2E validation tests (10 tests)
 ├── docs/
 │   └── plans/
 │       └── 2025-02-07-healthy-breaks-implementation.md
 ├── AGENTS.md                  # Comprehensive AI agent guide
+├── build.sh                   # Production build script
+├── .gitignore                 # Excludes dev files from production
 ├── tailwind.config.js         # Tailwind configuration
 ├── package.json
 ├── playwright.config.js
@@ -112,6 +118,25 @@ npx tailwindcss -i ./src/input.css -o ./src/tailwind.min.css --minify
 ```
 
 **Why local Tailwind?** The CSS file is bundled locally for Content Security Policy (CSP) compliance and offline functionality.
+
+### Production Build
+
+Create a minimal production package (excludes dev dependencies):
+
+```bash
+# Build production files
+./build.sh
+
+# Create distribution zip
+cd dist && zip -r ../healthy-breaks.zip .
+```
+
+**Size:** Production package is ~800KB (vs 43MB with dev dependencies)
+
+**Includes:**
+- `manifest.json`
+- `src/` (HTML, JS, CSS, fonts, icons)
+- `README.md`
 
 ## Technical Stack
 
@@ -132,6 +157,9 @@ npx tailwindcss -i ./src/input.css -o ./src/tailwind.min.css --minify
 - Water Break: `#3b82f6` (blue-500)
 - Walk Break: `#4b5563` (gray-600)
 - Posture Check: `#8b5cf6` (violet-500)
+- Hand & Wrist: `#f97316` (orange-500)
+- Mental Reset: `#06b6d4` (cyan-500)
+- Deep Breathing: `#10b981` (emerald-500)
 
 **Typography:**
 - Font: Inter (400, 500, 600, 700)

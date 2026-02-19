@@ -3,43 +3,43 @@ const BREAK_TYPES = {
     name: 'Eye Break',
     icon: '👁️',
     defaultInterval: 20,
-    description: '20-20-20 Rule: Every 20 mins, look 20ft away for 20s'
+    description: 'Look away from the screen, 20 feet away for 20 seconds.'
   },
   water: {
     name: 'Water Break',
     icon: '💧',
     defaultInterval: 60,
-    description: 'Stay hydrated! Drink water every hour'
+    description: 'Grab water and take a few sips. Staying hydrated keeps you sharp.'
   },
   walk: {
     name: 'Walk Break',
     icon: '🚶',
     defaultInterval: 60,
-    description: 'Walk and stretch every hour'
+    description: 'Stand up and stretch your legs. A short walk resets body and mind.'
   },
   posture: {
     name: 'Posture Check',
     icon: '🧘',
     defaultInterval: 30,
-    description: 'Check and correct your posture'
+    description: 'Pause and realign your posture. Small corrections can prevent neck and back pain.'
   },
   hand: {
     name: 'Hand & Wrist Break',
     icon: '✋',
     defaultInterval: 30,
-    description: 'Shake out hands, stretch fingers, and gently stretch wrists to prevent RSI'
+    description: 'Flex your wrists and spread your fingers. Keep those hands happy and healthy.'
   },
   mental: {
     name: 'Mental Reset',
     icon: '🧠',
     defaultInterval: 90,
-    description: '5 minutes of mental disengagement - stare out window, close eyes, meditate'
+    description: 'Close your eyes for a minute. Give your brain a quick refresh.'
   },
   breathing: {
     name: 'Deep Breathing',
     icon: '🌬️',
     defaultInterval: 60,
-    description: '60 seconds of deep diaphragmatic breathing to lower stress and increase oxygen'
+    description: 'Take a minute to breathe deeply. Inhale calm, exhale tension.'
   }
 };
 
@@ -129,22 +129,27 @@ async function handleSnoozeEnd(breakType) {
   await handleBreakTrigger(breakType);
 }
 
+// Track which breaks are being snoozed to prevent race condition with onClosed
+const snoozeInProgress = new Set();
+
 // Handle notification button clicks
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
   // Extract break type from notification ID (format: notification-{breakType}-{timestamp})
   const match = notificationId.match(/notification-(\w+)-\d+/);
   if (!match) return;
-  
+
   const breakType = match[1];
-  
+
   if (buttonIndex === 0) {
     // Done - dismiss notification and reset timer
     chrome.notifications.clear(notificationId);
     await resetTimer(breakType);
   } else if (buttonIndex === 1) {
     // Snooze 5m - snooze this specific break
+    snoozeInProgress.add(breakType);
     chrome.notifications.clear(notificationId);
     await snoozeBreak(breakType, 5);
+    snoozeInProgress.delete(breakType);
   }
 });
 
@@ -153,10 +158,16 @@ chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
   // Extract break type from notification ID (format: notification-{breakType}-{timestamp})
   const match = notificationId.match(/notification-(\w+)-\d+/);
   if (!match) return;
-  
+
   const breakType = match[1];
+
+  // Don't reset if snooze is in progress (prevents race condition)
+  if (snoozeInProgress.has(breakType)) {
+    return;
+  }
+
   const data = await chrome.storage.local.get('breaks');
-  
+
   // If closed by user and still in waiting state, reset the timer
   if (byUser && data.breaks[breakType].status === 'waiting') {
     await resetTimer(breakType);

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Healthy Breaks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Privacy-first health reminders for eye, water, walk, posture, hand, mental, and breathing breaks",
   "permissions": [
     "alarms",
